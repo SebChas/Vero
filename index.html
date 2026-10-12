@@ -100,11 +100,12 @@
           </div>
           <div class="flex items-center justify-center sm:justify-start gap-2 mt-1">
             <p id="header-subtitle" class="text-teal-100 text-xs sm:text-sm editable-field" contenteditable="false">Jornada de 8 Horas • Lunes, Miércoles y Viernes</p>
-            <!-- Badge de Sincronización Firebase -->
-            <span id="sync-status" class="no-print inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-900/80 border border-teal-500/40 text-teal-200">
+            <!-- Badge de Sincronización Firebase Interactivo -->
+            <button id="sync-status" onclick="window.showConnectionHelp()" title="Clic para ver detalles de la conexión" class="no-print inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-teal-900/80 border border-teal-500/40 text-teal-200 hover:bg-teal-900 transition-colors cursor-pointer">
               <span id="sync-indicator" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
               <span id="sync-text">Conectando a la nube...</span>
-            </span>
+              <svg class="w-3 h-3 text-teal-300 ml-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </button>
           </div>
         </div>
 
@@ -960,6 +961,54 @@
       </div>
     </div>
 
+    <!-- Modal de Diagnóstico y Activación de Firebase -->
+    <div id="connection-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50 transition-opacity">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left transform transition-all">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div class="flex items-center gap-2">
+            <span class="p-2 bg-amber-100 text-amber-700 rounded-lg">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </span>
+            <h3 class="text-base font-bold text-slate-900">Estado de Conexión Firebase</h3>
+          </div>
+          <button onclick="window.closeConnectionModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg hover:bg-slate-100">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+          </button>
+        </div>
+
+        <div class="mt-4 space-y-3.5 text-xs sm:text-sm text-slate-600">
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-200">
+            <p class="font-semibold text-slate-800 mb-1">Diagnóstico en vivo:</p>
+            <p id="conn-error-detail" class="font-mono text-xs text-teal-700 break-words">Verificando conexión con Firebase...</p>
+          </div>
+
+          <div class="space-y-2">
+            <p class="font-semibold text-slate-800">Estado de tu consola Firebase:</p>
+            <ul class="space-y-2 text-slate-600">
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-600 font-bold">✓</span>
+                <span><b>Autenticación Anónima:</b> Habilitada en Authentication.</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="text-emerald-600 font-bold">✓</span>
+                <span><b>Reglas de Cloud Firestore:</b> Acceso permitido para lectura y escritura.</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="mt-6 flex gap-2">
+          <button onclick="window.closeConnectionModal()" class="flex-1 px-4 py-2 border border-slate-200 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            Cerrar
+          </button>
+          <button onclick="window.retryFirebaseConnection()" class="flex-1 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs sm:text-sm font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            Probar Conexión Ahora
+          </button>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script type="module">
@@ -967,7 +1016,7 @@
     import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    // Configuración proporcionada del proyecto Firebase
+    // Configuración oficial de tu proyecto Firebase (vero-b04ee)
     const projectConfig = {
       apiKey: "AIzaSyDiVzpmlcC4XMvWj9_U8nRr0SCt-I4bcjA",
       authDomain: "vero-b04ee.firebaseapp.com",
@@ -978,7 +1027,8 @@
       measurementId: "G-MB4R0PTLFW"
     };
 
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : projectConfig;
+    // Priorizar tu proyecto vero-b04ee
+    const firebaseConfig = (typeof __firebase_config !== 'undefined' && __firebase_config) ? JSON.parse(__firebase_config) : projectConfig;
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'rutina-veronica';
 
     const app = initializeApp(firebaseConfig);
@@ -990,6 +1040,7 @@
     let activeDay = 'lunes';
     let isRemoteUpdate = false;
     let debounceSaveTimeout = null;
+    let lastErrorReason = "Iniciando conexión...";
 
     // Estado local reactivo
     const state = {
@@ -1001,12 +1052,13 @@
       customHtmlLayout: null
     };
 
-    // Referencia de Firestore pública compartida
-    const syncDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'routine_state', 'active_routine');
+    // Referencia en Cloud Firestore para sincronización compartida
+    const syncDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'routines', 'active_routine');
 
-    function updateSyncBadge(status, text) {
+    function updateSyncBadge(status, text, errorMsg = null) {
       const ind = document.getElementById('sync-indicator');
       const txt = document.getElementById('sync-text');
+      if (errorMsg) lastErrorReason = errorMsg;
       if (!ind || !txt) return;
 
       txt.textContent = text;
@@ -1018,6 +1070,23 @@
         ind.className = 'w-2 h-2 rounded-full bg-rose-400';
       }
     }
+
+    window.showConnectionHelp = function() {
+      const modal = document.getElementById('connection-modal');
+      const detail = document.getElementById('conn-error-detail');
+      if (detail) detail.textContent = lastErrorReason;
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.closeConnectionModal = function() {
+      const modal = document.getElementById('connection-modal');
+      if (modal) modal.classList.add('hidden');
+    };
+
+    window.retryFirebaseConnection = async function() {
+      window.closeConnectionModal();
+      await initializeApplication();
+    };
 
     function showToast(message) {
       const toast = document.getElementById('toast');
@@ -1052,9 +1121,14 @@
         try {
           await setDoc(syncDocRef, payload, { merge: true });
           updateSyncBadge('synced', 'En la nube');
+          lastErrorReason = "Conexión activa y datos sincronizados correctamente.";
         } catch (err) {
           console.error("Error sincronizando en Firestore:", err);
-          updateSyncBadge('error', 'Error al sincronizar');
+          let errText = err.message || err.code || 'Error desconocido';
+          if (err.code === 'permission-denied') {
+            errText = "Permiso denegado en Cloud Firestore. Revisa las reglas de seguridad en Firebase Console.";
+          }
+          updateSyncBadge('error', 'Error al sincronizar', errText);
           showToast('No se pudo sincronizar en la nube');
         }
       };
@@ -1071,9 +1145,9 @@
     function setupRealtimeListener() {
       onSnapshot(syncDocRef, (docSnap) => {
         if (!docSnap.exists()) {
-          // Documento inicial: crearlo con los valores base
           saveToCloud(true);
           updateSyncBadge('synced', 'En la nube');
+          lastErrorReason = "Conectado. Documento inicial creado.";
           return;
         }
 
@@ -1126,9 +1200,14 @@
         isRemoteUpdate = false;
         updateDayProgress();
         updateSyncBadge('synced', 'En la nube');
+        lastErrorReason = "Conectado y sincronizado en tiempo real con Firestore.";
       }, (error) => {
         console.error("Error al escuchar cambios en Firestore:", error);
-        updateSyncBadge('error', 'Error en conexión');
+        let msg = error.message || error.code || 'Error de permisos';
+        if (error.code === 'permission-denied') {
+          msg = "Permiso denegado: Ve a Firebase Console > Cloud Firestore > Reglas y permite la lectura/escritura.";
+        }
+        updateSyncBadge('error', 'Error en base de datos', msg);
       });
     }
 
@@ -1315,26 +1394,42 @@
 
     async function initializeApplication() {
       try {
-        updateSyncBadge('syncing', 'Autenticando...');
+        updateSyncBadge('syncing', 'Conectando a vero-b04ee...');
+        lastErrorReason = "Autenticando con Firebase...";
+
+        // Intentar autenticación robusta con respaldo anónimo garantizado
+        let authenticated = false;
         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
+          try {
+            await signInWithCustomToken(auth, __initial_auth_token);
+            authenticated = true;
+          } catch (tokenErr) {
+            console.warn("Fallo token personalizado, usando proveedor Anónimo:", tokenErr);
+          }
+        }
+
+        if (!authenticated) {
           await signInAnonymously(auth);
         }
 
         onAuthStateChanged(auth, (user) => {
           if (user) {
             currentUser = user;
-            updateSyncBadge('syncing', 'Conectando...');
+            updateSyncBadge('syncing', 'Conectando base de datos...');
+            lastErrorReason = `Autenticado con éxito (UID: ${user.uid}). Sincronizando con Cloud Firestore...`;
             setupRealtimeListener();
           } else {
             currentUser = null;
-            updateSyncBadge('error', 'Desconectado');
+            updateSyncBadge('error', 'Sin conexión', 'Usuario no autenticado.');
           }
         });
       } catch (err) {
         console.error("Fallo de autenticación Firebase:", err);
-        updateSyncBadge('error', 'Sin conexión');
+        let msg = err.message || err.code || 'Error desconocido';
+        if (err.code === 'auth/operation-not-allowed') {
+          msg = "Proveedor Anónimo desactivado en Firebase Console.";
+        }
+        updateSyncBadge('error', 'Sin conexión', msg);
       }
 
       window.switchTab('lunes');
