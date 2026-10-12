@@ -174,7 +174,7 @@
                   <span class="task-title font-semibold text-slate-800 block">Lavarropas (1.ª tanda)</span>
                   <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:15 - 08:30" data-alt="09:15 - 09:30">08:15 - 08:30</span>
                 </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Subir la ropa sucia y poner a andar el lavarropas.</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Subir la ropa sucia y poner a andar el lavarropas. <strong>Importante:</strong> siempre poner a secar y colgar la ropa al revés.</span>
               </div>
             </label>
 
@@ -232,6 +232,31 @@
             </label>
           </div>
         </section>
+
+        <!-- Bloque 3: Plancha Diaria -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
+            <span class="flex items-center gap-2">
+              <span>👔</span>
+              <span>3. Planchado Diario</span>
+            </span>
+            <span class="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full">1 hora máximo</span>
+          </h2>
+          <div class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máximo 1 hora)</span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
+                </div>
+                <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
+                  Planchar las prendas del canasto. <strong class="text-teal-800 bg-teal-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente planchados y firmes.
+                </span>
+              </div>
+            </label>
+          </div>
+        </section>
       </div>
 
       <!-- CONTENEDOR 2: LUNES MEDIO TIEMPO / TARDE -->
@@ -263,7 +288,7 @@
                   <span class="task-title font-semibold text-slate-800 block">Lavarropas de la tarde</span>
                   <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">14:00 - 14:20</span>
                 </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cargar tanda prioritaria de ropa para que termine antes de culminar la tarde.</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cargar tanda prioritaria de ropa. Recordar que al colgar, siempre poner a secar la ropa al revés.</span>
               </div>
             </label>
 
@@ -275,6 +300,19 @@
                   <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">14:20 - 15:30</span>
                 </div>
                 <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de la tarde al parque con ambas perras mientras hay buena luz solar.</span>
+              </div>
+            </label>
+
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-pm-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+              <div class="ml-3.5 flex-1">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="task-title font-semibold text-slate-800 block">Plancha (Máximo 1 hora)</span>
+                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
+                </div>
+                <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
+                  Planchado diario. <strong class="text-amber-900 bg-amber-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente prolijos y planchados.
+                </span>
               </div>
             </label>
 
@@ -296,7 +334,7 @@
                   <span class="task-title font-semibold text-slate-800 block">Colgar ropa y cierre de medio tiempo</span>
                   <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">16:30 - 17:30</span>
                 </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender el lavado, vaciar tachos de basura y dejar la casa ordenada para la noche.</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender el lavado (<strong>colgar siempre la ropa al revés</strong>), vaciar tachos de basura y dejar la casa ordenada.</span>
               </div>
             </label>
           </div>
@@ -336,7 +374,7 @@
                 <span class="task-title font-semibold text-slate-800 block">Lavarropas y tendido</span>
                 <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:30 - 09:00" data-alt="09:30 - 10:00">08:30 - 09:00</span>
               </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cargar tanda de ropa y colgar/organizar secado de prendas.</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cargar tanda de ropa y colgar/organizar secado de prendas. <strong>Importante:</strong> poner a secar siempre la ropa al revés.</span>
             </div>
           </label>
 
@@ -348,6 +386,30 @@
                 <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
               </div>
               <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo regular matutino al parque.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span class="flex items-center gap-2">
+            <span>👔</span>
+            <span>2. Planchado Diario</span>
+          </span>
+          <span class="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full">1 hora máximo</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="m-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máximo 1 hora)</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
+              </div>
+              <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
+                Planchar la ropa del día o acumulada. <strong class="text-teal-800 bg-teal-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente planchados y prolijos.
+              </span>
             </div>
           </label>
         </div>
@@ -386,7 +448,7 @@
                 <span class="task-title font-semibold text-slate-800 block">Cambio de sábanas y toallas</span>
                 <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:30 - 09:15" data-alt="09:30 - 10:15">08:30 - 09:15</span>
               </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cambiar sábanas en dormitorios y toallas en baños. Iniciar lavado.</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cambiar sábanas en dormitorios y toallas en baños. Iniciar lavado (<strong>tender y poner a secar siempre al revés</strong>).</span>
             </div>
           </label>
 
@@ -398,6 +460,30 @@
                 <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="09:15 - 10:15" data-alt="10:15 - 11:15">09:15 - 10:15</span>
               </div>
               <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo habitual de los viernes.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span class="flex items-center gap-2">
+            <span>👔</span>
+            <span>2. Planchado Diario</span>
+          </span>
+          <span class="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full">1 hora máximo</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máximo 1 hora)</span>
+                <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
+              </div>
+              <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
+                Planchado final de la semana. <strong class="text-teal-800 bg-teal-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente planchados y prolijos.
+              </span>
             </div>
           </label>
         </div>
