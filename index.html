@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rutina de Limpieza - Verónica</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f3f4f6;
+    }
+    .task-item {
+      transition: all 0.2s ease;
+    }
+    .task-item.completed {
+      background-color: #f0fdf4;
+      border-color: #bbf7d0;
+    }
+    .task-item.completed .task-title {
+      text-decoration: line-through;
+      color: #6b7280;
+    }
+    .tab-active {
+      background-color: #0d9488;
+      color: white;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .tab-inactive {
+      background-color: #ffffff;
+      color: #374151;
+    }
+    .tab-inactive:hover {
+      background-color: #f9fafb;
+    }
+  </style>
+</head>
+<body class="text-gray-800 min-h-screen pb-12">
+
+  <header class="bg-teal-700 text-white py-6 px-4 shadow-md mb-6">
+    <div class="max-w-3xl mx-auto text-center">
+      <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">Rutina de Limpieza - Verónica</h1>
+      <p class="text-teal-100 text-sm sm:text-base mt-1">Jornada de 8 Horas • Lunes, Miércoles y Viernes</p>
+      
+      <!-- Selector de Franja Horaria -->
+      <div class="mt-4 inline-flex items-center bg-teal-800/80 rounded-xl p-1 border border-teal-600 text-xs sm:text-sm">
+        <span class="px-2.5 py-1 text-teal-200 font-medium">Horario base:</span>
+        <button onclick="setScheduleShift('08:00')" id="shift-8" class="px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm">
+          08:00 a 16:00
+        </button>
+        <button onclick="setScheduleShift('09:00')" id="shift-9" class="px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all">
+          09:00 a 17:00
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4">
+    <nav class="flex rounded-xl bg-gray-200 p-1 mb-6 shadow-inner gap-1" aria-label="Días de la semana">
+      <button onclick="switchTab('lunes')" id="btn-lunes" class="tab-btn tab-active flex-1 py-3 text-center rounded-lg font-semibold text-sm sm:text-base transition-all">
+        Lunes
+      </button>
+      <button onclick="switchTab('miercoles')" id="btn-miercoles" class="tab-btn tab-inactive flex-1 py-3 text-center rounded-lg font-semibold text-sm sm:text-base transition-all">
+        Miércoles
+      </button>
+      <button onclick="switchTab('viernes')" id="btn-viernes" class="tab-btn tab-inactive flex-1 py-3 text-center rounded-lg font-semibold text-sm sm:text-base transition-all">
+        Viernes
+      </button>
+    </nav>
+
+    <!-- CONTENIDO LUNES -->
+    <div id="tab-lunes" class="day-tab space-y-6">
+      
+      <!-- Bloque 1 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>1. Inicio de Jornada</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00" data-alt="09:00 - 11:00">08:00 - 10:00 (2h)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Revisar lavaplatos</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:00 - 08:15" data-alt="09:00 - 09:15">08:00 - 08:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Si tiene platos limpios dejarlos ahí, si tiene platos sucios llenarlo y ponerlo a andar.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Lavarropas (1.ª tanda)</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:15 - 08:30" data-alt="09:15 - 09:30">08:15 - 08:30</span>
+              </div>
+              <span class="text-sm text-gray-500">Subir la ropa sucia y poner a andar el lavarropas.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Computadora y Sillón</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:30 - 09:00" data-alt="09:30 - 10:00">08:30 - 09:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Limpiar el área de la computadora y el sillón.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Pasear a Isabella y Chaska</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Sacarlas al parque por 1 a 2 horas (al volver se completan las primeras 2 horas del día).</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 2 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>2. Tareas Intermedias (al volver del parque)</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 11:30" data-alt="11:00 - 12:30">10:00 - 11:30 (1h 30m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Ordenar la cocina</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="10:00 - 10:35" data-alt="11:00 - 11:35">10:00 - 10:35</span>
+              </div>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Ordenar la sala</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="10:35 - 11:05" data-alt="11:35 - 12:05">10:35 - 11:05</span>
+              </div>
+              <span class="text-sm text-gray-500">No olvidar limpiar siempre debajo del mueble del televisor.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Limpiar baño de abajo</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="11:05 - 11:30" data-alt="12:05 - 12:30">11:05 - 11:30</span>
+              </div>
+              <span class="text-sm text-gray-500">Asegurarse de que siempre haya papel higiénico y una toalla en la ducha.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 3 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>3. Tareas Específicas del Lunes</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="11:30 - 14:15" data-alt="12:30 - 15:15">11:30 - 14:15 (2h 45m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Patio y Parrilla</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="11:30 - 12:15" data-alt="12:30 - 13:15">11:30 - 12:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Limpiar el patio completo, incluida la parrilla.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Cuarto de Arriba (Profundidad)</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="12:15 - 13:00" data-alt="13:15 - 14:00">12:15 - 13:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Limpiar a profundidad, cambiar las sábanas y limpiar ventana.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t10" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Baño del Segundo Piso</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="13:00 - 13:40" data-alt="14:00 - 14:40">13:00 - 13:40</span>
+              </div>
+              <span class="text-sm text-gray-500">Limpiar baño, ordenar productos al costado y debajo del lavabo. Revisar qué productos faltan y anotarlos abajo.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t11" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Cuarto de Invitados</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="13:40 - 14:15" data-alt="14:40 - 15:15">13:40 - 14:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Ordenar y limpiar el cuarto, asegurarse de que estén bien las camas y las sábanas.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 4 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>4. Cierre del Día y Ropa</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="14:15 - 16:00" data-alt="15:15 - 17:00">14:15 - 16:00 (1h 45m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t12" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Secado y Última Tanda</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="14:15 - 14:35" data-alt="15:15 - 15:35">14:15 - 14:35</span>
+              </div>
+              <span class="text-sm text-gray-500">Subir y sacar la ropa ya lavada, ponerla a secar y poner una última tanda a lavar por el día.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="l-t13" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Planchar, Doblar y Ordenar</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="14:35 - 16:00" data-alt="15:35 - 17:00">14:35 - 16:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Planchar y doblar ropa pendiente.</span>
+              <div class="mt-2 text-xs bg-amber-50 text-amber-800 border-l-4 border-amber-400 p-2.5 rounded-r-md">
+                📌 <b>Nota Importante:</b> Asegurarse de que el cuello de las remeras quede bien planchado. Ordenar siempre la ropa donde va (Tip: tomar fotos de dónde van las cosas para no ponerlas en lugares incorrectos).
+              </div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Notas -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 mb-2">Notas y Productos Faltantes (Lunes)</h2>
+        <textarea id="notes-lunes" oninput="saveNotes('lunes')" rows="3" placeholder="Anotar aquí productos faltantes o novedades..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+      </section>
+
+    </div>
+
+    <!-- CONTENIDO MIÉRCOLES -->
+    <div id="tab-miercoles" class="day-tab space-y-6 hidden">
+      
+      <!-- Bloque 1 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>1. Inicio de Jornada</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00" data-alt="09:00 - 11:00">08:00 - 10:00 (2h)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Revisar lavaplatos</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:00 - 08:15" data-alt="09:00 - 09:15">08:00 - 08:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Si tiene platos limpios dejarlos ahí, si tiene platos sucios llenarlo y ponerlo a andar.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Lavarropas (1.ª tanda)</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:15 - 08:30" data-alt="09:15 - 09:30">08:15 - 08:30</span>
+              </div>
+              <span class="text-sm text-gray-500">Subir la ropa sucia y poner a andar el lavarropas.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Computadora y Sillón</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:30 - 09:00" data-alt="09:30 - 10:00">08:30 - 09:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Limpiar el área de la computadora y el sillón.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Pasear a Isabella y Chaska + Peinar</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Sacarlas al parque por 1 a 2 horas.</span>
+              <div class="mt-2 text-xs bg-teal-50 text-teal-800 border-l-4 border-teal-500 p-2.5 rounded-r-md">
+                🐶 <b>Especial Miércoles:</b> Pasar el peine a Isabella en el parque durante 15 minutos.
+              </div>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 2 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>2. Tareas Intermedias (al volver del parque)</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 11:30" data-alt="11:00 - 12:30">10:00 - 11:30 (1h 30m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Ordenar la cocina</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="10:00 - 10:35" data-alt="11:00 - 11:35">10:00 - 10:35</span>
+              </div>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Ordenar la sala</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="10:35 - 11:05" data-alt="11:35 - 12:05">10:35 - 11:05</span>
+              </div>
+              <span class="text-sm text-gray-500">No olvidar limpiar siempre debajo del mueble del televisor.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Limpiar baño de abajo</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="11:05 - 11:30" data-alt="12:05 - 12:30">11:05 - 11:30</span>
+              </div>
+              <span class="text-sm text-gray-500">Asegurarse de que siempre haya papel higiénico y una toalla en la ducha.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque Mantenimiento Miércoles -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>3. Mantenimiento y Repaso del Miércoles</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="11:30 - 14:15" data-alt="12:30 - 15:15">11:30 - 14:15 (2h 45m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t-mid1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Repaso y Desinfección de Áreas Comunes</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="11:30 - 12:50" data-alt="12:30 - 13:50">11:30 - 12:50</span>
+              </div>
+              <span class="text-sm text-gray-500">Repasar polvo, picaportes, interruptores, mesadas y superficies de uso frecuente.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t-mid2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Aspirado y Trapeado de Pisos</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="12:50 - 14:15" data-alt="13:50 - 15:15">12:50 - 14:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Aspirar o barrer y trapear con producto desinfectante en planta baja y accesos.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 4 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>4. Cierre del Día y Ropa</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="14:15 - 16:00" data-alt="15:15 - 17:00">14:15 - 16:00 (1h 45m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Secado y Última Tanda</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="14:15 - 14:35" data-alt="15:15 - 15:35">14:15 - 14:35</span>
+              </div>
+              <span class="text-sm text-gray-500">Subir y sacar la ropa ya lavada, ponerla a secar y poner una última tanda a lavar por el día.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="m-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Planchar, Doblar y Ordenar</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="14:35 - 16:00" data-alt="15:35 - 17:00">14:35 - 16:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Planchar y doblar ropa pendiente (cuellos de remeras bien planchados, ordenar ropa en su lugar correspondiente).</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Notas -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 mb-2">Notas y Productos Faltantes (Miércoles)</h2>
+        <textarea id="notes-miercoles" oninput="saveNotes('miercoles')" rows="3" placeholder="Anotar aquí productos faltantes o novedades..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+      </section>
+
+    </div>
+
+    <!-- CONTENIDO VIERNES -->
+    <div id="tab-viernes" class="day-tab space-y-6 hidden">
+      
+      <!-- Bloque 1 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>1. Inicio de Jornada</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00" data-alt="09:00 - 11:00">08:00 - 10:00 (2h)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Revisar lavaplatos</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:00 - 08:15" data-alt="09:00 - 09:15">08:00 - 08:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Si tiene platos limpios dejarlos ahí, si tiene platos sucios llenarlo y ponerlo a andar.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Lavarropas (1.ª tanda)</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:15 - 08:30" data-alt="09:15 - 09:30">08:15 - 08:30</span>
+              </div>
+              <span class="text-sm text-gray-500">Subir la ropa sucia y poner a andar el lavarropas.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Computadora y Sillón</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="08:30 - 09:00" data-alt="09:30 - 10:00">08:30 - 09:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Limpiar el área de la computadora y el sillón.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Pasear a Isabella y Chaska</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Sacarlas al parque por 1 a 2 horas.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 2 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>2. Tareas Intermedias (al volver del parque)</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 11:30" data-alt="11:00 - 12:30">10:00 - 11:30 (1h 30m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Ordenar la cocina</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="10:00 - 10:35" data-alt="11:00 - 11:35">10:00 - 10:35</span>
+              </div>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Ordenar la sala</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="10:35 - 11:05" data-alt="11:35 - 12:05">10:35 - 11:05</span>
+              </div>
+              <span class="text-sm text-gray-500">No olvidar limpiar siempre debajo del mueble del televisor.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Limpiar baño de abajo</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="11:05 - 11:30" data-alt="12:05 - 12:30">11:05 - 11:30</span>
+              </div>
+              <span class="text-sm text-gray-500">Asegurarse de que siempre haya papel higiénico y una toalla en la ducha.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 3 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>3. Tareas Específicas del Viernes</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="11:30 - 14:15" data-alt="12:30 - 15:15">11:30 - 14:15 (2h 45m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Tercer Piso (Limpieza simple)</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="11:30 - 12:45" data-alt="12:30 - 13:45">11:30 - 12:45</span>
+              </div>
+              <span class="text-sm text-gray-500">Darle una limpieza simple al tercer piso.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t8-prep" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Repaso General Previo al Fin de Semana</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="12:45 - 14:15" data-alt="13:45 - 15:15">12:45 - 14:15</span>
+              </div>
+              <span class="text-sm text-gray-500">Verificar que todos los cestos de basura tengan bolsa limpia y las áreas principales queden despejadas.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 4 -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 border-b pb-2 mb-4 flex items-center justify-between flex-wrap gap-2">
+          <span>4. Cierre del Día y Ropa</span>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="14:15 - 16:00" data-alt="15:15 - 17:00">14:15 - 16:00 (1h 45m)</span>
+        </h2>
+        <div class="space-y-3">
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Secado y Última Tanda</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="14:15 - 14:35" data-alt="15:15 - 15:35">14:15 - 14:35</span>
+              </div>
+              <span class="text-sm text-gray-500">Subir y sacar la ropa ya lavada, ponerla a secar y poner una última tanda a lavar por el día.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3 rounded-lg border border-gray-200 cursor-pointer hover:border-teal-300">
+            <input type="checkbox" id="v-t10" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span class="task-title font-medium block">Planchar, Doblar y Ordenar</span>
+                <span class="schedule-tag text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600 font-medium whitespace-nowrap" data-base="14:35 - 16:00" data-alt="15:35 - 17:00">14:35 - 16:00</span>
+              </div>
+              <span class="text-sm text-gray-500">Planchar y doblar ropa pendiente (cuellos de remeras bien planchados, ordenar ropa en su lugar correspondiente).</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Notas -->
+      <section class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-5">
+        <h2 class="text-lg font-bold text-teal-800 mb-2">Notas y Productos Faltantes (Viernes)</h2>
+        <textarea id="notes-viernes" oninput="saveNotes('viernes')" rows="3" placeholder="Anotar aquí productos faltantes o novedades..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+      </section>
+
+    </div>
+
+    <!-- Botón Reiniciar -->
+    <div class="mt-8 text-center">
+      <button onclick="promptResetModal()" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium text-sm rounded-lg shadow-sm transition-colors focus:ring-2 focus:ring-rose-500 focus:ring-offset-2">
+        Reiniciar Marcas del Checklist
+      </button>
+    </div>
+
+    <!-- Modal de confirmación estilizado (sin alert ni confirm nativo) -->
+    <div id="reset-modal" class="fixed inset-0 bg-black/40 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-xl max-w-sm w-full p-6 shadow-xl border border-gray-100 text-center">
+        <h3 class="text-lg font-bold text-gray-900 mb-2">¿Reiniciar checklist?</h3>
+        <p class="text-sm text-gray-600 mb-6">Se desmarcarán todas las tareas de la semana. Las notas y comentarios se conservarán intactos.</p>
+        <div class="flex gap-3 justify-center">
+          <button onclick="closeResetModal()" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+            Cancelar
+          </button>
+          <button onclick="confirmReset()" class="flex-1 px-4 py-2 bg-rose-600 text-white rounded-lg text-sm font-semibold hover:bg-rose-700">
+            Sí, reiniciar
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function setScheduleShift(startHour) {
+      const shift8Btn = document.getElementById('shift-8');
+      const shift9Btn = document.getElementById('shift-9');
+      const isShift8 = startHour === '08:00';
+
+      if (isShift8) {
+        shift8Btn.className = 'px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm';
+        shift9Btn.className = 'px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all';
+      } else {
+        shift9Btn.className = 'px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm';
+        shift8Btn.className = 'px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all';
+      }
+
+      document.querySelectorAll('.schedule-tag').forEach(tag => {
+        const text = isShift8 ? tag.dataset.base : tag.dataset.alt;
+        if (text) {
+          tag.textContent = text;
+        }
+      });
+
+      localStorage.setItem('veronica_shift', startHour);
+    }
+
+    function switchTab(day) {
+      document.querySelectorAll('.day-tab').forEach(el => el.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(el => {
+        el.classList.remove('tab-active');
+        el.classList.add('tab-inactive');
+      });
+
+      document.getElementById('tab-' + day).classList.remove('hidden');
+      const btn = document.getElementById('btn-' + day);
+      btn.classList.remove('tab-inactive');
+      btn.classList.add('tab-active');
+    }
+
+    function toggleTask(checkbox) {
+      const container = checkbox.closest('.task-item');
+      if (checkbox.checked) {
+        container.classList.add('completed');
+      } else {
+        container.classList.remove('completed');
+      }
+      localStorage.setItem('veronica_' + checkbox.id, checkbox.checked);
+    }
+
+    function saveNotes(day) {
+      const value = document.getElementById('notes-' + day).value;
+      localStorage.setItem('veronica_notes_' + day, value);
+    }
+
+    function loadSavedData() {
+      // Cargar turno horario
+      const savedShift = localStorage.getItem('veronica_shift') || '08:00';
+      setScheduleShift(savedShift);
+
+      // Cargar Checkboxes
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        const saved = localStorage.getItem('veronica_' + cb.id);
+        if (saved === 'true') {
+          cb.checked = true;
+          cb.closest('.task-item').classList.add('completed');
+        }
+      });
+
+      // Cargar Notas
+      ['lunes', 'miercoles', 'viernes'].forEach(day => {
+        const note = localStorage.getItem('veronica_notes_' + day);
+        if (note !== null) {
+          const area = document.getElementById('notes-' + day);
+          if (area) area.value = note;
+        }
+      });
+    }
+
+    function promptResetModal() {
+      document.getElementById('reset-modal').classList.remove('hidden');
+    }
+
+    function closeResetModal() {
+      document.getElementById('reset-modal').classList.add('hidden');
+    }
+
+    function confirmReset() {
+      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+        cb.checked = false;
+        cb.closest('.task-item').classList.remove('completed');
+        localStorage.removeItem('veronica_' + cb.id);
+      });
+      closeResetModal();
+    }
+
+    // Inicializar
+    document.addEventListener('DOMContentLoaded', loadSavedData);
+  </script>
+</body>
+</html>
