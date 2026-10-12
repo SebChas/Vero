@@ -18,14 +18,36 @@
     .task-item:hover { transform: translateY(-1px); }
     .task-item.completed { background-color: #f0fdf4 !important; border-color: #86efac !important; }
     .task-item.completed .task-title { text-decoration: line-through; color: #64748b; }
-    .tab-active { background-color: #0f766e; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.2); }
+    .tab-active { background-color: #0f766e; color: #ffffff; box-shadow: 0 4px 6px -1px rgba(15, 118, 110, 0.25); }
     .tab-inactive { background-color: #ffffff; color: #475569; }
     .tab-inactive:hover { background-color: #f1f5f9; color: #0f766e; }
+    .task-card-container { transition: transform 0.15s ease, opacity 0.15s ease; }
+    .task-card-container.is-dragging { opacity: 0.45; transform: scale(0.98); }
+    .task-card-container.drag-over-top { border-top: 3px solid #0f766e !important; }
+    .task-card-container.drag-over-bottom { border-bottom: 3px solid #0f766e !important; }
+    .reorder-handle:hover { cursor: grab; }
+    .reorder-handle:active { cursor: grabbing; }
+    .btn-reorder:hover { background-color: #e2e8f0; color: #0f766e; }
+    .task-drop-target { min-height: 48px; border: 2px dashed transparent; transition: all 0.2s ease; border-radius: 0.75rem; }
+    .task-drop-target.drag-target-hover { border-color: #0d9488 !important; background-color: #f0fdfa !important; }
+    .task-drop-target.is-empty:empty::before {
+      content: 'Arrastra o mueve tareas aquí con ▲ ▼ o ⇄';
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      color: #94a3b8;
+      border: 2px dashed #cbd5e1;
+      border-radius: 0.75rem;
+      margin-bottom: 0.25rem;
+    }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-16">
 
-  <!-- Encabezado Principal -->
+  <!-- Encabezado Principal con Indicadores y Selectores -->
   <header class="bg-gradient-to-r from-teal-800 to-teal-700 text-white py-6 px-4 shadow-lg mb-6 border-b border-teal-600">
     <div class="max-w-4xl mx-auto">
       <div class="flex items-center justify-between flex-wrap gap-4 mb-3">
@@ -34,7 +56,7 @@
             <span class="text-2xl">📋</span>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Rutina de Limpieza - Verónica</h1>
           </div>
-          <p class="text-teal-100 text-sm sm:text-base mt-1 font-medium">Jornada de 8 Horas • Planificación Semanal y Tareas Mensuales Profundas</p>
+          <p class="text-teal-100 text-sm sm:text-base mt-1 font-medium">Jornada Completa de 8 Horas • Limpieza Integral del Hogar & Plan Mensual</p>
         </div>
         
         <!-- Indicador Cloud Firebase -->
@@ -48,9 +70,9 @@
       <div class="mt-4 pt-4 border-t border-teal-600/60 flex items-center justify-between flex-wrap gap-4">
         
         <div class="flex items-center flex-wrap gap-3">
-          <!-- Selector de Franja Horaria -->
+          <!-- Selector de Franja Horaria de 8 Horas -->
           <div class="inline-flex items-center bg-teal-900/80 rounded-xl p-1 border border-teal-600/80 text-xs sm:text-sm">
-            <span class="px-2.5 py-1 text-teal-200 font-medium">Horario base:</span>
+            <span class="px-2.5 py-1 text-teal-200 font-medium">Horario 8h:</span>
             <button onclick="setScheduleShift('08:00')" id="shift-8" class="px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm">
               08:00 a 16:00
             </button>
@@ -77,12 +99,18 @@
               <option value="11">Diciembre</option>
             </select>
           </div>
+
+          <!-- Botón de Orden Personalizado -->
+          <button type="button" onclick="promptResetOrderModal()" title="Volver al orden predeterminado" class="inline-flex items-center gap-1.5 bg-teal-900/80 hover:bg-teal-950 text-teal-200 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-teal-600/80 transition-all shadow-sm">
+            <span>🔄</span>
+            <span>Restablecer Orden</span>
+          </button>
         </div>
 
         <!-- Indicadores de Progreso -->
         <div class="flex items-center gap-4 text-xs font-semibold">
           <div class="bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-600/60">
-            <span class="text-teal-200">Vista actual:</span>
+            <span class="text-teal-200">Día actual:</span>
             <span id="progress-text" class="text-white ml-1">0/0 (0%)</span>
           </div>
           <div class="bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-600/60 hidden sm:block">
@@ -114,6 +142,18 @@
       </button>
     </nav>
 
+    <!-- Banner General de Reglas Cruciales -->
+    <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3.5 mb-6 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+      <div class="flex items-start sm:items-center gap-2">
+        <span class="text-lg">⚠️</span>
+        <span><strong>Reglas clave del hogar:</strong> Tender y colgar la ropa siempre <u>al revés</u>. En la plancha (máx 1h diaria), lo primordial es que los <u>cuellos queden impecables y firmes</u>. No olvidar limpiar siempre <u>debajo del televisor</u> y repasar los <u>estantes de la cocina</u>.</span>
+      </div>
+      <div class="text-xs text-amber-800 bg-amber-100 px-2.5 py-1 rounded-lg font-medium self-end sm:self-auto flex items-center gap-1">
+        <span>↕️</span>
+        <span>Mueve tareas libremente entre cualquier horario con ▲ ▼, ⇄ o arrastrando</span>
+      </div>
+    </div>
+
     <!-- CONTENIDO LUNES -->
     <div id="tab-lunes" class="day-tab space-y-6">
       
@@ -123,406 +163,735 @@
           <div>
             <div class="flex items-center gap-2">
               <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Modalidad del Lunes</span>
-              <span id="monday-badge" class="text-xs font-medium text-slate-500">Jornada habitual matutina</span>
+              <span id="monday-badge" class="text-xs font-medium text-slate-500">Jornada Completa de 8 Horas</span>
             </div>
-            <p class="text-xs text-slate-600 mt-1">Selecciona el tipo de turno según trabaje jornada completa por la mañana o medio tiempo por la tarde:</p>
+            <p class="text-xs text-slate-600 mt-1">Alternar según trabaje la jornada completa de 8h o el medio tiempo de la tarde (4h):</p>
           </div>
           <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs sm:text-sm font-semibold">
             <button type="button" onclick="setMondayMode('full')" id="monday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
-              <span>☀️</span> Mañana (8h)
+              <span>☀️</span> Jornada Completa (8h)
             </button>
             <button type="button" onclick="setMondayMode('afternoon')" id="monday-btn-afternoon" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5">
-              <span>🌤️</span> Medio Tiempo (Tarde)
+              <span>🌤️</span> Medio Tiempo Tarde (4h)
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Aviso de vinculación con tarea mensual -->
-      <div class="bg-teal-50 border border-teal-200 text-teal-900 rounded-xl p-3.5 text-xs sm:text-sm flex items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <span class="text-lg">💡</span>
-          <span><strong>Tip de organización:</strong> Los lunes son ideales para iniciar la tarea de limpieza profunda asignada a la semana actual.</span>
-        </div>
-        <button onclick="switchTab('mensual')" class="text-teal-700 underline font-semibold hover:text-teal-900 whitespace-nowrap">Ver Plan Mensual →</button>
-      </div>
-
-      <!-- CONTENEDOR 1: LUNES JORNADA COMPLETA / MAÑANA -->
+      <!-- VISTA LUNES: JORNADA COMPLETA (8 HORAS) -->
       <div id="monday-view-full" class="space-y-6">
-        <!-- Bloque 1: Inicio de Jornada -->
+        <!-- Bloque 1 -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-          <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-            <span>1. Inicio de Jornada (Mañana)</span>
-            <span class="schedule-tag text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00" data-alt="09:00 - 11:00">08:00 - 10:00 (2h)</span>
-          </h2>
-          <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-teal-800">1. Apertura Matutina, Lavarropas & Mascotas</h3>
+            <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00 (2h)" data-alt="09:00 - 11:00 (2h)">08:00 - 10:00 (2h)</span>
+          </div>
+          <div id="container-lunes-b1" class="space-y-3">
             <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <input type="checkbox" id="l-f-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos</span>
-                  <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:00 - 08:15" data-alt="09:00 - 09:15">08:00 - 08:15</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Si tiene platos limpios dejarlos ahí, si tiene platos sucios llenarlo y ponerlo a andar.</span>
+                <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos, estantes y despejar cocina</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Guardar vajilla limpia o encender ciclo si quedó vajilla sucia. Despejar mesada, repasar los estantes de la cocina y pileta.</span>
               </div>
             </label>
-
             <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <input type="checkbox" id="l-f-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Lavarropas (1.ª tanda)</span>
-                  <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:15 - 08:30" data-alt="09:15 - 09:30">08:15 - 08:30</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Subir la ropa sucia y poner a andar el lavarropas. <strong>Importante:</strong> siempre poner a secar y colgar la ropa al revés.</span>
+                <span class="task-title font-semibold text-slate-800 block">Lavarropas (1.ª tanda): prendas claras o ropa de cama</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Separar y poner a andar. <strong>Recordatorio:</strong> poner siempre a secar y colgar la ropa <u>al revés</u>.</span>
               </div>
             </label>
-
             <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <input type="checkbox" id="l-f-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Computadora y Sillón</span>
-                  <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:30 - 09:00" data-alt="09:30 - 10:00">08:30 - 09:00</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar el área de la computadora y el sillón.</span>
+                <span class="task-title font-semibold text-slate-800 block">Comederos, bebederos y ventilación inicial</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar recipientes de Isabella y Chaska con agua fresca, abrir ventanas para ventilar toda la casa.</span>
               </div>
             </label>
-
             <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <input type="checkbox" id="l-f-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska</span>
-                  <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Sacarlas al parque por 1 a 2 horas.</span>
+                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska</span>
+                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-700 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Sacarlas al parque con tiempo adecuado (1 hora), hidratarlas al regresar y limpiar patitas.</span>
               </div>
             </label>
           </div>
         </section>
 
-        <!-- Bloque 2: Tareas Intermedias -->
+        <!-- Bloque 2 -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-          <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-            <span>2. Tareas Intermedias</span>
-            <span class="schedule-tag text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 11:30" data-alt="11:00 - 12:30">10:00 - 11:30 (1h 30m)</span>
-          </h2>
-          <div class="space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-teal-800">2. Baños, Habitaciones & Áreas Comunes</h3>
+            <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</span>
+          </div>
+          <div id="container-lunes-b2" class="space-y-3">
             <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <input type="checkbox" id="l-f-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Ordenar y limpiar la cocina</span>
-                  <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="10:00 - 10:35" data-alt="11:00 - 11:35">10:00 - 10:35</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Mesadas, pileta, repasar anafe y electrodomésticos de uso diario.</span>
+                <span class="task-title font-semibold text-slate-800 block">Desinfección completa de baños</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar y desinfectar inodoro, bidet, lavatorio, grifería, repasar mampara, reponer jabón y papel.</span>
               </div>
             </label>
-
             <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <input type="checkbox" id="l-f-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Ordenar la sala</span>
-                  <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="10:35 - 11:05" data-alt="11:35 - 12:05">10:35 - 11:05</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar siempre debajo del mueble del televisor y desempolvar superficies.</span>
+                <span class="task-title font-semibold text-slate-800 block">Dormitorios: camas, mesas de noche y orden</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender camas con prolijidad, sacudir almohadas, retirar polvo de mesas de noche y guardar ropa fuera de lugar.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Computadora, escritorio y sillón</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar con paño suave la pantalla y teclado de la computadora, aspirar y acomodar almohadones del sillón.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Sala principal y mueble de TV</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar repisas, mesas bajas y <u>siempre limpiar debajo del mueble del televisor</u>.</span>
               </div>
             </label>
           </div>
         </section>
 
-        <!-- Bloque 3: Plancha Diaria -->
+        <!-- Bloque 3 -->
         <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-          <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-            <span class="flex items-center gap-2">
-              <span>👔</span>
-              <span>3. Planchado Diario</span>
-            </span>
-            <span class="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full">1 hora máximo</span>
-          </h2>
-          <div class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-teal-800">3. Planchado Diario (Máximo 1 Hora)</h3>
+            <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</span>
+          </div>
+          <div id="container-lunes-b3" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-f-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máximo 1 hora)</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
-                  Planchar las prendas del canasto. <strong class="text-teal-800 bg-teal-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente planchados y firmes.
-                </span>
+                <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máx 1h) - Cuellos impecables</span>
+                <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">Planchar camisas, pantalones y remeras. <strong>REGLA FUNDAMENTAL:</strong> Lo que más importa es que los <u>cuellos queden impecables, alineados y bien firmes</u>. Colgar en perchas de inmediato.</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Bloque 4 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-teal-800">4. Almuerzo y Descanso</h3>
+            <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</span>
+          </div>
+          <div id="container-lunes-b4" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t10" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Pausa de almuerzo & descanso</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Almuerzo personal, refrigerio e hidratación. Dejar el espacio de comida limpio y ordenado.</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Bloque 5 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-teal-800">5. Tareas del Plan Mensual & Mantenimiento</h3>
+            <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</span>
+          </div>
+          <div id="container-lunes-b5" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t11" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Avanzar con la tarea profunda del Plan Mensual</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Realizar la tarea asignada según la semana del mes (S1: cocina/horno/heladera; S2: vidrios/persianas; S3: textiles; S4: azulejos/zócalos).</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t12" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Tender 2.ª tanda y guardar ropa seca doblada</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Colgar la segunda tanda <u>siempre al revés</u>. Descolgar prendas secas, doblarlas y guardarlas en sus placares.</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <!-- Bloque 6 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-teal-800">6. Pisos a Fondo, Basura & Cierre</h3>
+            <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</span>
+          </div>
+          <div id="container-lunes-b6" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t13" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Aspirar o barrer todos los ambientes de la casa</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cocina, living, pasillos, dormitorios, debajo de camas y rincones accesibles.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t14" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Trapear y desinfectar pisos con aroma agradable</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Trapear desde el fondo hacia la salida. Enjuagar bien el trapo entre ambientes.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+              <input type="checkbox" id="l-f-t15" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Vaciar todos los tachos de basura y reponer bolsas</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tachos de cocina, baños y dormitorios. Sacar la bolsa al contenedor exterior y dejar paños limpios secando.</span>
               </div>
             </label>
           </div>
         </section>
       </div>
 
-      <!-- CONTENEDOR 2: LUNES MEDIO TIEMPO / TARDE -->
+      <!-- VISTA LUNES: MEDIO TIEMPO TARDE (4 HORAS: 13:30 A 17:30) -->
       <div id="monday-view-afternoon" class="space-y-6 hidden">
-        <section class="bg-white rounded-2xl shadow-sm border border-amber-200/80 p-5">
-          <h2 class="text-base sm:text-lg font-bold text-amber-900 border-b border-amber-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-            <span class="flex items-center gap-2">
-              <span>🌤️</span>
-              <span>Rutina Concentrada de Tarde</span>
-            </span>
-            <span class="text-xs font-bold px-3 py-1 bg-amber-100 text-amber-900 rounded-full">13:30 - 17:30 (4 horas)</span>
-          </h2>
-          <div class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-pm-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+        <section class="bg-amber-50/60 rounded-2xl shadow-sm border border-amber-200 p-5">
+          <div class="flex items-center justify-between border-b border-amber-200/60 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-amber-900">Jornada Reducida de la Tarde (4 Horas)</h3>
+            <span class="text-xs font-bold px-3 py-1 bg-amber-200 text-amber-900 rounded-full">13:30 - 17:30</span>
+          </div>
+          <div id="container-lunes-afternoon" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-a-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Llegada y cocina: Lavaplatos</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">13:30 - 14:00</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Descargar lavaplatos si tiene vajilla limpia o cargar platos sucios y poner en marcha. Repasar mesadas.</span>
+                <span class="task-title font-semibold text-slate-800 block">Lavaplatos, mesadas y primera tanda de lavarropas</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Despejar cocina y poner lavarropas a andar. <strong>Recordar:</strong> colgar la ropa <u>al revés</u>.</span>
               </div>
             </label>
-
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-pm-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-a-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Lavarropas de la tarde</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">14:00 - 14:20</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cargar tanda prioritaria de ropa. Recordar que al colgar, siempre poner a secar la ropa al revés.</span>
+                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 hora de tarde)</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Sacarlas al parque en horario de tarde, refrescar agua y darles comida.</span>
               </div>
             </label>
-
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-pm-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-a-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (Paseo de la Tarde)</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">14:20 - 15:30</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de la tarde al parque con ambas perras mientras hay buena luz solar.</span>
+                <span class="task-title font-semibold text-slate-800 block">Planchado intensivo (Máx 1h) - Cuellos impecables</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Máximo 1 hora. Asegurar que los <u>cuellos queden perfectamente planchados y firmes</u>.</span>
               </div>
             </label>
-
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-pm-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-a-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Plancha (Máximo 1 hora)</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
-                  Planchado diario. <strong class="text-amber-900 bg-amber-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente prolijos y planchados.
-                </span>
+                <span class="task-title font-semibold text-slate-800 block">Repaso de baños, computadora, sillón y debajo de TV</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desinfectar inodoros/lavatorios y limpiar el área de computación y debajo del mueble de TV.</span>
               </div>
             </label>
-
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-pm-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="l-a-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
               <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Computadora, Sillón y Sala rápida</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">15:30 - 16:30</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar escritorio, aspirar/acomodar sillón y repasar muebles principales.</span>
-              </div>
-            </label>
-
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-pm-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-amber-600 focus:ring-amber-500">
-              <div class="ml-3.5 flex-1">
-                <div class="flex items-center justify-between gap-2">
-                  <span class="task-title font-semibold text-slate-800 block">Colgar ropa y cierre de medio tiempo</span>
-                  <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">16:30 - 17:30</span>
-                </div>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender el lavado (<strong>colgar siempre la ropa al revés</strong>), vaciar tachos de basura y dejar la casa ordenada.</span>
+                <span class="task-title font-semibold text-slate-800 block">Barrer, trapear pisos principales y sacar basura</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pasar mopa con perfume en pisos y retirar residuos de la casa.</span>
               </div>
             </label>
           </div>
         </section>
       </div>
 
-      <!-- Notas Lunes -->
+      <!-- Notas del Lunes -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Productos Faltantes (Lunes)</h2>
-        <textarea id="notes-lunes" oninput="saveNotes('lunes')" rows="3" placeholder="Anotar aquí productos faltantes o novedades del lunes..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+        <h3 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Novedades (Lunes)</h3>
+        <textarea id="notes-lunes" oninput="saveNotes('lunes')" rows="3" placeholder="Anotar productos faltantes, reparaciones pendientes o novedades del lunes..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
       </section>
     </div>
 
     <!-- CONTENIDO MIÉRCOLES -->
     <div id="tab-miercoles" class="day-tab space-y-6 hidden">
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-          <span>1. Inicio de Jornada y Rutina</span>
-          <span class="schedule-tag text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00" data-alt="09:00 - 11:00">08:00 - 10:00 (2h)</span>
-        </h2>
-        <div class="space-y-3">
+      <!-- Selector de Modalidad para el Miércoles -->
+      <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Modalidad del Miércoles</span>
+              <span id="wednesday-badge" class="text-xs font-medium text-slate-500">Jornada Completa de 8 Horas</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1">Alternar según trabaje la jornada completa de 8h o el medio tiempo de la tarde (4h):</p>
+          </div>
+          <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs sm:text-sm font-semibold">
+            <button type="button" onclick="setDayMode('miercoles', 'full')" id="wednesday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
+              <span>☀️</span> Jornada Completa (8h)
+            </button>
+            <button type="button" onclick="setDayMode('miercoles', 'afternoon')" id="wednesday-btn-afternoon" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5">
+              <span>🌤️</span> Medio Tiempo Tarde (4h)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA MIÉRCOLES: JORNADA COMPLETA (8 HORAS) -->
+      <div id="wednesday-view-full" class="space-y-6">
+        <!-- Bloque 1 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">1. Apertura Matutina, Lavarropas & Paseo</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00 (2h)" data-alt="09:00 - 11:00 (2h)">08:00 - 10:00 (2h)</span>
+        </div>
+        <div id="container-miercoles-b1" class="space-y-3">
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <input type="checkbox" id="w-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos y cocina</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:00 - 08:30" data-alt="09:00 - 09:30">08:00 - 08:30</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Descargar lavaplatos o cargar vajilla pendiente. Despejar mesadas.</span>
+              <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos, mesadas y estantes de cocina</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Guardar vajilla limpia o encender lavaplatos. Limpiar bachas, grifería y repasar los estantes de la cocina.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <input type="checkbox" id="w-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Lavarropas y tendido</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:30 - 09:00" data-alt="09:30 - 10:00">08:30 - 09:00</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cargar tanda de ropa y colgar/organizar secado de prendas. <strong>Importante:</strong> poner a secar siempre la ropa al revés.</span>
+              <span class="task-title font-semibold text-slate-800 block">Lavarropas (1.ª tanda): ropa oscura o toallas</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Poner a andar ciclo. <strong>Recordatorio obligatorio:</strong> tender y secar la ropa <u>al revés</u>.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <input type="checkbox" id="w-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo regular matutino al parque.</span>
+              <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 a 2 horas)</span>
+              <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-700 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de calidad al parque, ejercicio y juegos. Limpiar patitas y reponer agua fresca al volver.</span>
             </div>
           </label>
         </div>
       </section>
 
+      <!-- Bloque 2 -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-          <span class="flex items-center gap-2">
-            <span>👔</span>
-            <span>2. Planchado Diario</span>
-          </span>
-          <span class="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full">1 hora máximo</span>
-        </h2>
-        <div class="space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">2. Espejos, Mamparas, Computadoras & Salas</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</span>
+        </div>
+        <div id="container-miercoles-b2" class="space-y-3">
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <input type="checkbox" id="w-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máximo 1 hora)</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
-                Planchar la ropa del día o acumulada. <strong class="text-teal-800 bg-teal-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente planchados y prolijos.
-              </span>
+              <span class="task-title font-semibold text-slate-800 block">Espejos, mamparas de ducha y desinfección de baños</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tratamiento de cristales y espejos sin vetas. Desinfectar artefactos sanitarios y grifería.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Limpieza de computadoras, sillón y mueble del televisor</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Retirar polvo del área de trabajo, acomodar cojines del sillón y pasar paño <u>debajo del mueble de TV</u>.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Dormitorios y orden de placards</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender prolijamente las camas, despejar superficies y ordenar calzado o ropa guardada.</span>
             </div>
           </label>
         </div>
       </section>
 
-      <!-- Notas Miércoles -->
+      <!-- Bloque 3 -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Productos Faltantes (Miércoles)</h2>
-        <textarea id="notes-miercoles" oninput="saveNotes('miercoles')" rows="3" placeholder="Anotar aquí productos faltantes o novedades del miércoles..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">3. Planchado Diario (Máximo 1 Hora)</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</span>
+        </div>
+        <div id="container-miercoles-b3" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 cursor-pointer hover:border-amber-400">
+            <input type="checkbox" id="w-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máx 1h) - Cuellos impecables</span>
+              <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">Dedicar máximo 1 hora de plancha. <strong>ENFOQUE:</strong> Que los <u>cuellos de camisas y remeras queden firmes, derechos y sin arrugas</u>.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 4 -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">4. Almuerzo y Descanso</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</span>
+        </div>
+        <div id="container-miercoles-b4" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Pausa de almuerzo</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Almuerzo personal y descanso. Dejar la mesa y cocina recogidas.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 5 -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">5. Tareas del Plan Mensual & Ropa</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</span>
+        </div>
+        <div id="container-miercoles-b5" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Continuación del Plan Mensual</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Dedicar 1 hora a las tareas rotativas del mes (limpieza profunda de muebles, vidrios, interior de alacenas o juntas).</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t10" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Colgar 2.ª tanda de ropa al revés y guardar prendas secas</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender siempre las prendas del revés para cuidar los colores. Doblar prendas secas y guardar en cajones.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 6 -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">6. Pisos a Fondo, Basura & Cierre</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</span>
+        </div>
+        <div id="container-miercoles-b6" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t11" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Aspirado y barrido exhaustivo</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pasar aspiradora o escoba por todos los rincones, bajo mesas, sillas y sofás.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t12" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Trapeado de pisos con desinfectante</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pasar trapo húmedo bien escurrido en todos los ambientes.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="w-t13" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Retirar residuos y ordenar útiles</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Vaciar tachos, poner bolsas nuevas y enjuagar baldes y trapos.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+      </div>
+
+      <!-- VISTA MIÉRCOLES: MEDIO TIEMPO TARDE (4 HORAS: 13:30 A 17:30) -->
+      <div id="wednesday-view-afternoon" class="space-y-6 hidden">
+        <section class="bg-amber-50/60 rounded-2xl shadow-sm border border-amber-200 p-5">
+          <div class="flex items-center justify-between border-b border-amber-200/60 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-amber-900">Jornada Reducida de la Tarde (4 Horas)</h3>
+            <span class="text-xs font-bold px-3 py-1 bg-amber-200 text-amber-900 rounded-full">13:30 - 17:30</span>
+          </div>
+          <div id="container-miercoles-afternoon" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="w-a-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Lavaplatos, mesadas y tanda de lavarropas</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Despejar bacha, encender lavaplatos y poner ciclo de ropa oscura/toallas (<strong>colgar al revés</strong>).</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="w-a-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 hora de tarde)</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de calidad al parque, hidratar y limpiar patitas al regresar.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="w-a-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Planchado intensivo (Máx 1h) - Cuellos impecables</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Máximo 1 hora. Asegurar que los <u>cuellos queden firmes, derechos y sin arrugas</u>.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="w-a-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Espejos, mamparas de ducha, computadoras, sillón y mueble de TV</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Repaso rápido de cristales, baños, área de trabajo y <u>limpiar debajo del mueble de TV</u>.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="w-a-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Barrer, trapear pisos principales y sacar basura</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Trapear con desinfectante, vaciar tachos y sacar la basura.</span>
+              </div>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <!-- Notas del Miércoles -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <h3 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Novedades (Miércoles)</h3>
+        <textarea id="notes-miercoles" oninput="saveNotes('miercoles')" rows="3" placeholder="Anotar productos faltantes, reparaciones pendientes o novedades del miércoles..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
       </section>
     </div>
 
     <!-- CONTENIDO VIERNES -->
     <div id="tab-viernes" class="day-tab space-y-6 hidden">
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-          <span>1. Cierre Semanal y Rutina</span>
-          <span class="schedule-tag text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00" data-alt="09:00 - 11:00">08:00 - 10:00 (2h)</span>
-        </h2>
-        <div class="space-y-3">
+      <!-- Selector de Modalidad para el Viernes -->
+      <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Modalidad del Viernes</span>
+              <span id="friday-badge" class="text-xs font-medium text-slate-500">Jornada Completa de 8 Horas</span>
+            </div>
+            <p class="text-xs text-slate-600 mt-1">Alternar según trabaje la jornada completa de 8h o el medio tiempo de la tarde (4h):</p>
+          </div>
+          <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs sm:text-sm font-semibold">
+            <button type="button" onclick="setDayMode('viernes', 'full')" id="friday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
+              <span>☀️</span> Jornada Completa (8h)
+            </button>
+            <button type="button" onclick="setDayMode('viernes', 'afternoon')" id="friday-btn-afternoon" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5">
+              <span>🌤️</span> Medio Tiempo Tarde (4h)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISTA VIERNES: JORNADA COMPLETA (8 HORAS) -->
+      <div id="friday-view-full" class="space-y-6">
+        <!-- Bloque 1 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">1. Apertura Matutina, Cambio de Sábanas & Mascotas</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="08:00 - 10:00 (2h)" data-alt="09:00 - 11:00 (2h)">08:00 - 10:00 (2h)</span>
+        </div>
+        <div id="container-viernes-b1" class="space-y-3">
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="v-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos y basura general</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:00 - 08:30" data-alt="09:00 - 09:30">08:00 - 08:30</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Vaciar tachos de basura, recambio de bolsas y dejar lavaplatos listo.</span>
+              <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos, estantes y preparar cocina</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Descargar lavaplatos o cargar vajilla, limpiar mesada, repasar los estantes y dejar pileta seca.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="v-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Cambio de sábanas y toallas</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="08:30 - 09:15" data-alt="09:30 - 10:15">08:30 - 09:15</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cambiar sábanas en dormitorios y toallas en baños. Iniciar lavado (<strong>tender y poner a secar siempre al revés</strong>).</span>
+              <span class="task-title font-semibold text-slate-800 block">Cambio integral de sábanas y toallas (Lavarropas 1.ª tanda)</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Retirar ropa de cama y toallas de baños. Colocar juegos limpios. Poner tanda a lavar y <strong>tender al revés</strong>.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="v-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold" data-base="09:15 - 10:15" data-alt="10:15 - 11:15">09:15 - 10:15</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo habitual de los viernes.</span>
+              <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 hora de parque)</span>
+              <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-700 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de fin de semana, cepillado ligero si hace falta y lavado de comederos.</span>
             </div>
           </label>
         </div>
       </section>
 
+      <!-- Bloque 2 -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 border-b border-slate-100 pb-2.5 mb-4 flex items-center justify-between flex-wrap gap-2">
-          <span class="flex items-center gap-2">
-            <span>👔</span>
-            <span>2. Planchado Diario</span>
-          </span>
-          <span class="text-xs font-bold px-3 py-1 bg-teal-100 text-teal-800 rounded-full">1 hora máximo</span>
-        </h2>
-        <div class="space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">2. Baños a Fondo, Dormitorios & Polvo</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</span>
+        </div>
+        <div id="container-viernes-b2" class="space-y-3">
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="v-t-plancha" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <input type="checkbox" id="v-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <div class="flex items-center justify-between gap-2">
-                <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máximo 1 hora)</span>
-                <span class="text-xs px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-800 font-semibold">1h máx.</span>
-              </div>
-              <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">
-                Planchado final de la semana. <strong class="text-teal-800 bg-teal-50 px-1 py-0.5 rounded">Detalle clave:</strong> lo que más importa es que los cuellos queden perfectamente planchados y prolijos.
-              </span>
+              <span class="task-title font-semibold text-slate-800 block">Desinfección profunda de baños para el fin de semana</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Sanitarios, griferías con brillo, mamparas, pisos y reposición completa de toallas limpias.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Computadora, sillón y mueble de TV</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar área tecnológica, esponjar sillones y <u>limpiar detrás y debajo del mueble del televisor</u>.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Dormitorios y orden final de la semana</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Acomodar mesas de noche, doblar mantas y dejar dormitorios en perfecto orden.</span>
             </div>
           </label>
         </div>
       </section>
 
-      <!-- Notas Viernes -->
+      <!-- Bloque 3 -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Productos Faltantes (Viernes)</h2>
-        <textarea id="notes-viernes" oninput="saveNotes('viernes')" rows="3" placeholder="Anotar aquí lista de compras para reponer insumos..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">3. Planchado Diario (Máximo 1 Hora)</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</span>
+        </div>
+        <div id="container-viernes-b3" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 cursor-pointer hover:border-amber-400">
+            <input type="checkbox" id="v-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máx 1h) - Cuellos impecables</span>
+              <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">Dejar la ropa de vestir del fin de semana y semana lista. <strong>PRIORIDAD:</strong> <u>Cuellos bien alineados, firmes y sin marcas</u>.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 4 -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">4. Almuerzo y Descanso</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-slate-100 text-slate-700 rounded-full" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</span>
+        </div>
+        <div id="container-viernes-b4" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Pausa de almuerzo</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Almuerzo personal y descanso de media hora.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 5 -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">5. Tareas del Plan Mensual & Ropa</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</span>
+        </div>
+        <div id="container-viernes-b5" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Completar tareas del Plan Mensual de la semana</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cerrar la tarea mensual correspondiente a la semana (repasar vidrios, filtros, muebles o electrodomésticos).</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t10" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Tender ropa al revés y guardar prendas secas</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Colgar la última tanda <u>al revés</u>. Doblar y ordenar toda la ropa en los placares.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+
+      <!-- Bloque 6 -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-teal-800">6. Pisos Impecables, Basuras & Cierre Semanal</h3>
+          <span class="schedule-tag text-xs font-semibold px-2.5 py-1 bg-teal-100 text-teal-800 rounded-full" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</span>
+        </div>
+        <div id="container-viernes-b6" class="space-y-3">
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t11" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Aspirado minucioso de toda la casa</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pisos, alfombras, debajo de camas, zócalos y rincones de cada ambiente.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t12" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Trapeado profundo y perfumado de pisos</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Doble pasada de trapo con aromatizante para dejar la casa impecable de cara al fin de semana.</span>
+            </div>
+          </label>
+          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
+            <input type="checkbox" id="v-t13" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
+            <div class="ml-3.5 flex-1">
+              <span class="task-title font-semibold text-slate-800 block">Vaciar todos los tachos de basura y dejar insumos listos</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Bolsas limpias en todos los tachos, sacar residuos al contenedor y dejar baldes y trapos limpios.</span>
+            </div>
+          </label>
+        </div>
+      </section>
+      </div>
+
+      <!-- VISTA VIERNES: MEDIO TIEMPO TARDE (4 HORAS: 13:30 A 17:30) -->
+      <div id="friday-view-afternoon" class="space-y-6 hidden">
+        <section class="bg-amber-50/60 rounded-2xl shadow-sm border border-amber-200 p-5">
+          <div class="flex items-center justify-between border-b border-amber-200/60 pb-3 mb-4">
+            <h3 class="text-base sm:text-lg font-bold text-amber-900">Jornada Reducida de la Tarde (4 Horas)</h3>
+            <span class="text-xs font-bold px-3 py-1 bg-amber-200 text-amber-900 rounded-full">13:30 - 17:30</span>
+          </div>
+          <div id="container-viernes-afternoon" class="space-y-3">
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="v-a-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Lavaplatos, cambio de sábanas/toallas y lavarropas</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Despejar cocina, cambiar sábanas de camas y poner lavarropas (<strong>colgar al revés</strong>).</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="v-a-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 hora de tarde)</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de parque de fin de semana, agua fresca y limpiar patitas.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="v-a-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Planchado intensivo (Máx 1h) - Cuellos impecables</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Máximo 1 hora. Ropa del fin de semana con <u>cuellos firmes, derechos y sin arrugas</u>.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="v-a-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Baños a fondo, computadora, sillón y mueble de TV</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desinfección de inodoros/lavatorios, sacudir sillón y <u>limpiar debajo del mueble de TV</u>.</span>
+              </div>
+            </label>
+            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
+              <input type="checkbox" id="v-a-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
+              <div class="ml-3.5 flex-1">
+                <span class="task-title font-semibold text-slate-800 block">Aspirar/barrer, trapeado perfumado y vaciar basuras</span>
+                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Dejar la casa impecable de cara al fin de semana y retirar residuos.</span>
+              </div>
+            </label>
+          </div>
+        </section>
+      </div>
+
+      <!-- Notas del Viernes -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <h3 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Novedades (Viernes)</h3>
+        <textarea id="notes-viernes" oninput="saveNotes('viernes')" rows="3" placeholder="Anotar productos faltantes para comprar o notas finales de la semana..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
       </section>
     </div>
 
     <!-- CONTENIDO PLAN MENSUAL -->
     <div id="tab-mensual" class="day-tab space-y-6 hidden">
       
-      <!-- Resumen y Explicación del Plan Mensual -->
-      <div class="bg-gradient-to-r from-teal-50 to-emerald-50 border border-teal-200 rounded-2xl p-5 shadow-sm">
-        <div class="flex items-start justify-between flex-wrap gap-4">
+      <!-- Encabezado del Mes con Progreso -->
+      <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-5">
+        <div class="flex items-center justify-between flex-wrap gap-4 mb-3">
           <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-100 px-2.5 py-1 rounded-full">Rotación Mensual</span>
-            <h2 class="text-xl font-extrabold text-teal-950 mt-1">Limpieza Profunda del Mes (<span id="current-month-display">Mes Actual</span>)</h2>
-            <p class="text-slate-600 text-sm mt-1 max-w-2xl">
-              Para no sobrecargar la jornada diaria, estas tareas profundas se reparten a lo largo de las <strong>4 semanas del mes</strong>. Cada semana tiene su foco específico.
-            </p>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Cronograma Rotativo</span>
+              <h2 class="text-lg sm:text-xl font-extrabold text-slate-900">Plan Mensual: <span id="current-month-display" class="text-teal-700">Mes Actual</span></h2>
+            </div>
+            <p class="text-xs sm:text-sm text-slate-500 mt-1">Tareas profundas distribuidas en las 4 semanas del mes para no sobrecargar los días ordinarios.</p>
           </div>
-          <button onclick="openAddTaskModal()" class="inline-flex items-center gap-2 bg-teal-700 hover:bg-teal-800 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl shadow-sm transition-all hover:shadow">
+          <button onclick="openAddTaskModal()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all">
             <span>➕</span>
             <span>Agregar Tarea Mensual</span>
           </button>
         </div>
-        
-        <!-- Barra de progreso visual mensual -->
-        <div class="mt-4 pt-3 border-t border-teal-100">
-          <div class="flex justify-between items-center text-xs font-semibold text-teal-900 mb-1.5">
-            <span>Avance general de tareas del mes</span>
-            <span id="monthly-bar-text">0 de 0 completadas (0%)</span>
+
+        <!-- Barra de Progreso Mensual -->
+        <div class="mt-4 pt-3 border-t border-slate-100">
+          <div class="flex justify-between text-xs font-semibold text-slate-600 mb-1.5">
+            <span>Progreso Total del Mes:</span>
+            <span id="monthly-bar-text" class="text-teal-700">0 de 0 completadas (0%)</span>
           </div>
-          <div class="w-full bg-teal-200/60 rounded-full h-2.5 overflow-hidden">
-            <div id="monthly-progress-bar" class="bg-teal-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+          <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden border border-slate-200">
+            <div id="monthly-progress-bar" class="bg-teal-600 h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
           </div>
         </div>
       </div>
@@ -537,28 +906,25 @@
           <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 1 al 7</span>
         </div>
         <div id="container-week-1" class="space-y-3">
-          <!-- Tareas Semana 1 (Inyectadas o estáticas iniciales) -->
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w1-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Limpieza interior de heladera y freezer</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Revisar fechas de caducidad, lavar estantes y cajones de verduras con agua tibia y bicarbonato/vinagre.</span>
+              <span class="task-title font-semibold text-slate-800 block">Interior de heladera y freezer</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Revisar alimentos vencidos, lavar estantes y cajones de verduras con agua tibia y producto apto.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w1-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Horno, microondas y campana extractora</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desengrasar rejillas, bandeja de horno y limpiar filtros metálicos de la campana.</span>
+              <span class="task-title font-semibold text-slate-800 block">Horno, microondas y filtros de campana</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desengrasar bandeja de horno, plato de microondas y sumergir filtros metálicos de campana en agua caliente.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w1-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Alacenas y despensa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Vaciar y repasar estantes interiores, descartar paquetes abiertos viejos.</span>
+              <span class="task-title font-semibold text-slate-800 block">Alacenas, bajo mesada y despensa</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Vaciar y limpiar estantes interiores de alacenas, descartar paquetes viejos y ordenar especieros.</span>
             </div>
           </label>
         </div>
@@ -569,7 +935,7 @@
         <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div class="flex items-center gap-2.5">
             <span class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-extrabold text-xs">S2</span>
-            <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 2: Ventanas, Vidrios y Aberturas</h3>
+            <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 2: Ventanas, Vidrios, Rieles y Persianas</h3>
           </div>
           <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 8 al 14</span>
         </div>
@@ -577,24 +943,22 @@
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w2-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Vidrios y ventanas de toda la casa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar vidrios por dentro y fuera accesible. Repasar marcos y cristales de balcón.</span>
+              <span class="task-title font-semibold text-slate-800 block">Vidrios y aberturas de toda la casa</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar vidrios por ambos lados accesibles, marcos de aluminio y cristales del balcón.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w2-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
               <span class="task-title font-semibold text-slate-800 block">Rieles de ventanas y persianas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Aspirar rieles y polvo acumulado en ranuras y persianas.</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Aspirar rieles y polvo acumulado en ranuras y pasar trapo húmedo por tablillas de persianas.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w2-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Espejos y mamparas de baño</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tratamiento antical en mampara y limpieza impecable de espejos.</span>
+              <span class="task-title font-semibold text-slate-800 block">Tratamiento antical de mamparas y espejos</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Aplicar producto desincrustante en mamparas de baño y limpiar espejos grandes.</span>
             </div>
           </label>
         </div>
@@ -613,24 +977,22 @@
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w3-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Acolchados, cortinas o fundas de sillón</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar frazadas/cubrecamas grandes o fundas del sillón.</span>
+              <span class="task-title font-semibold text-slate-800 block">Acolchados gruesos, fundas de sillón o cortinas</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavado especial de piezas grandes. Recordar poner a secar y colgar la ropa <u>al revés</u>.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w3-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Rotar colchón y limpiar bajo las camas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Aspirar exhaustivamente el piso debajo de la cama y estructura.</span>
+              <span class="task-title font-semibold text-slate-800 block">Rotar colchones y aspirado profundo bajo camas</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Girar o rotar colchones y aspirar minuciosamente la estructura y piso debajo.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w3-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Interior de placares y cajones principales</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Repasar estantes superiores y piso del placard.</span>
+              <span class="task-title font-semibold text-slate-800 block">Interior de placares y cajones</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Repasar estantes superiores y piso interior de placares con paño humedecido.</span>
             </div>
           </label>
         </div>
@@ -641,7 +1003,7 @@
         <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
           <div class="flex items-center gap-2.5">
             <span class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-extrabold text-xs">S4</span>
-            <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 4: Baños Profundo, Zócalos y Paredes</h3>
+            <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 4: Baños Profundo, Zócalos y Filtros</h3>
           </div>
           <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 22 a fin de mes</span>
         </div>
@@ -649,24 +1011,22 @@
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w4-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Azulejos, juntas y desinfección total de baños</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cepillar juntas de ducha, desinfectar detrás de inodoros y rejillas de desagüe.</span>
+              <span class="task-title font-semibold text-slate-800 block">Juntas de azulejos y desinfección total de baños</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cepillar juntas con producto desincrustante, limpiar detrás de inodoros y rejillas de desagüe.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w4-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Zócalos, puertas y manijas de la casa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pasar paño húmedo con desinfectante por todos los zócalos y marcos de puertas.</span>
+              <span class="task-title font-semibold text-slate-800 block">Zócalos, puertas, marcos y manijas de la casa</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar con paño húmedo desinfectante todos los zócalos y puertas de cada ambiente.</span>
             </div>
           </label>
-
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
             <input type="checkbox" id="m-w4-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
             <div class="ml-3.5 flex-1">
               <span class="task-title font-semibold text-slate-800 block">Filtros de aire acondicionado y lavarropas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar filtros de los splits de aire y limpiar el filtro inferior del lavarropas.</span>
+              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar filtros de los splits de aire acondicionado y vaciar el filtro inferior de pelusas del lavarropas.</span>
             </div>
           </label>
         </div>
@@ -674,8 +1034,8 @@
 
       <!-- Notas Generales del Mes -->
       <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <h2 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Novedades del Mes (<span id="notes-month-title">Mes</span>)</h2>
-        <textarea id="notes-mensual" oninput="saveNotes('mensual')" rows="3" placeholder="Insumos especiales del mes, arreglos pendientes, observaciones..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+        <h3 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Novedades del Mes (<span id="notes-month-title">Mes</span>)</h3>
+        <textarea id="notes-mensual" oninput="saveNotes('mensual')" rows="3" placeholder="Insumos especiales del mes, reparaciones pendientes, observaciones..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
       </section>
     </div>
 
@@ -686,6 +1046,9 @@
       </button>
       <button onclick="promptResetModal('monthly')" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all">
         Reiniciar Tareas del Mes
+      </button>
+      <button onclick="promptResetOrderModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all">
+        Restablecer Orden Inicial
       </button>
     </div>
 
@@ -702,7 +1065,20 @@
       </div>
     </div>
 
-    <!-- MODAL 2: Agregar Tarea Mensual Personalizada -->
+    <!-- MODAL 2: Restablecer Orden -->
+    <div id="reset-order-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+        <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">↕️</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-2">¿Restablecer el orden?</h3>
+        <p class="text-xs sm:text-sm text-slate-600 mb-6">Todas las tareas volverán a su orden cronológico original.</p>
+        <div class="flex gap-3 justify-center">
+          <button onclick="closeResetOrderModal()" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button onclick="confirmResetOrder()" class="flex-1 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-teal-800 shadow">Restablecer</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: Agregar Tarea Mensual Personalizada -->
     <div id="add-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left">
         <div class="flex justify-between items-center mb-4">
@@ -714,21 +1090,21 @@
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Semana asignada:</label>
             <select id="new-task-week" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-teal-500">
-              <option value="1">Semana 1 (Días 1 al 7)</option>
-              <option value="2">Semana 2 (Días 8 al 14)</option>
-              <option value="3">Semana 3 (Días 15 al 21)</option>
-              <option value="4">Semana 4 (Días 22 a fin de mes)</option>
+              <option value="1">Semana 1 (Días 1 al 7 - Cocina)</option>
+              <option value="2">Semana 2 (Días 8 al 14 - Vidrios/Aberturas)</option>
+              <option value="3">Semana 3 (Días 15 al 21 - Textiles/Tapizados)</option>
+              <option value="4">Semana 4 (Días 22 a fin de mes - Baños/Zócalos)</option>
             </select>
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Título de la tarea:</label>
-            <input type="text" id="new-task-title" required placeholder="Ej: Descongelar freezer o pulir metales" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <input type="text" id="new-task-title" required placeholder="Ej: Limpiar lámparas o pulir cubiertos" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
           </div>
 
           <div>
             <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Detalle o instrucción adicional:</label>
-            <input type="text" id="new-task-desc" placeholder="Ej: Usar producto desengrasante específico" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <input type="text" id="new-task-desc" placeholder="Ej: Usar paño especial o producto antical" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
           </div>
 
           <div class="pt-3 flex gap-3">
@@ -736,6 +1112,28 @@
             <button type="submit" class="flex-1 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-teal-800 shadow">Guardar Tarea</button>
           </div>
         </form>
+      </div>
+    </div>
+
+    <!-- MODAL 4: Mover Tarea a Cualquier Horario / Bloque -->
+    <div id="move-block-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">⇄</span>
+            <h3 class="text-lg font-bold text-slate-900">Mover a otro horario</h3>
+          </div>
+          <button onclick="closeMoveBlockModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+        </div>
+        <p class="text-xs text-slate-500 mb-4">Selecciona el bloque horario al que deseas transferir esta tarea:</p>
+        
+        <div id="move-block-options" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+          <!-- Opciones dinámicas cargadas por JavaScript -->
+        </div>
+
+        <div class="pt-4 flex justify-end">
+          <button type="button" onclick="closeMoveBlockModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cerrar</button>
+        </div>
       </div>
     </div>
 
@@ -760,16 +1158,20 @@
 
     let db = null;
     let docRef = null;
-    let resetTarget = 'weekly'; // 'weekly' or 'monthly'
+    let resetTarget = 'weekly';
+    let draggedItem = null;
     
-    // Objeto de datos persistente (compatible hacia atrás)
+    // Objeto central de datos
     let localData = {
       shift: '08:00',
-      mondayMode: 'full', // 'full' (Mañana/Completa) o 'afternoon' (Medio Tiempo Tarde)
+      mondayMode: 'full',
+      wednesdayMode: 'full',
+      fridayMode: 'full',
       month: new Date().getMonth(),
       tasks: {},
       notes: {},
-      customMonthlyTasks: []
+      customMonthlyTasks: [],
+      taskOrders: {}
     };
 
     function updateStatus(state, msg) {
@@ -799,14 +1201,13 @@
         db = firebase.firestore();
         docRef = db.collection('rutinas').doc('veronica_routine');
 
-        // Escuchar cambios remotos en tiempo real
         docRef.onSnapshot((doc) => {
           if (doc.exists) {
             const data = doc.data();
             applyDataToUI(data);
             updateStatus('online', 'En la nube');
           } else {
-            syncState(); // Crear documento inicial si no existe
+            syncState();
           }
         }, (error) => {
           console.warn("Aviso Firestore:", error);
@@ -837,34 +1238,33 @@
     function applyDataToUI(data) {
       if (!data) return;
       
-      // Combinar conservando defaults
       localData = {
         ...localData,
         ...data,
         mondayMode: data.mondayMode || 'full',
+        wednesdayMode: data.wednesdayMode || 'full',
+        fridayMode: data.fridayMode || 'full',
         tasks: data.tasks || {},
         notes: data.notes || {},
-        customMonthlyTasks: data.customMonthlyTasks || []
+        customMonthlyTasks: data.customMonthlyTasks || [],
+        taskOrders: data.taskOrders || {}
       };
 
-      // 1. Horario de entrada
       if (localData.shift) {
         setScheduleShift(localData.shift, false);
       }
 
-      // 2. Modalidad de Lunes
-      setMondayMode(localData.mondayMode || 'full', false);
+      setDayMode('lunes', localData.mondayMode || 'full', false);
+      setDayMode('miercoles', localData.wednesdayMode || 'full', false);
+      setDayMode('viernes', localData.fridayMode || 'full', false);
 
-      // 3. Mes
       const currentMonth = localData.month !== undefined ? localData.month : new Date().getMonth();
       const monthSelect = document.getElementById('select-month');
       if (monthSelect) monthSelect.value = currentMonth;
       updateMonthLabels(currentMonth);
 
-      // 4. Renderizar tareas mensuales personalizadas guardadas
       renderCustomMonthlyTasks();
 
-      // 5. Marcar checkboxes (semanales y mensuales)
       document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
         cb.checked = !!localData.tasks[cb.id];
         const container = cb.closest('.task-item');
@@ -874,7 +1274,6 @@
         }
       });
 
-      // 6. Notas
       ['lunes', 'miercoles', 'viernes', 'mensual'].forEach(key => {
         const area = document.getElementById('notes-' + key);
         if (area && localData.notes[key] !== undefined) {
@@ -882,16 +1281,344 @@
         }
       });
 
+      // Aplicar orden guardado de tareas a lo largo de todos los contenedores
+      applyAllSavedOrders();
       updateAllProgress();
     }
 
-    function setMondayMode(mode, triggerSync = true) {
-      localData.mondayMode = mode;
-      const btnFull = document.getElementById('monday-btn-full');
-      const btnAfternoon = document.getElementById('monday-btn-afternoon');
-      const viewFull = document.getElementById('monday-view-full');
-      const viewAfternoon = document.getElementById('monday-view-afternoon');
-      const badge = document.getElementById('monday-badge');
+    let movingTaskId = null;
+
+    function setupReorderControls() {
+      let idx = 0;
+      document.querySelectorAll('.day-tab section .space-y-3, [id^="container-week-"], [id^="container-lunes-"], [id^="container-miercoles-"], [id^="container-viernes-"]').forEach(container => {
+        if (!container.id) {
+          container.id = 'task-container-' + (++idx);
+        }
+        
+        container.classList.add('task-drop-target');
+        attachContainerDropEvents(container);
+
+        container.querySelectorAll(':scope > label.task-item, :scope > div.custom-monthly-item').forEach(taskElement => {
+          wrapTaskWithReorderControls(taskElement, container);
+        });
+      });
+      checkEmptyContainers();
+    }
+
+    function checkEmptyContainers() {
+      document.querySelectorAll('.task-drop-target').forEach(c => {
+        const hasTasks = c.querySelectorAll(':scope > .task-card-container').length > 0;
+        if (hasTasks) c.classList.remove('is-empty');
+        else c.classList.add('is-empty');
+      });
+    }
+
+    function wrapTaskWithReorderControls(el, container) {
+      if (el.parentElement && el.parentElement.classList.contains('task-card-container')) {
+        return;
+      }
+
+      const cb = el.querySelector('input[type="checkbox"]');
+      const taskId = cb ? cb.id : 'task-' + Math.random().toString(36).substr(2, 9);
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'task-card-container flex items-center gap-2 group';
+      wrapper.setAttribute('draggable', 'true');
+      wrapper.setAttribute('data-task-id', taskId);
+
+      const btnCol = document.createElement('div');
+      btnCol.className = 'flex flex-col items-center justify-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 select-none';
+      btnCol.innerHTML = `
+        <button type="button" onclick="moveTask(this, 'up')" title="Mover hacia arriba" class="btn-reorder w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-slate-200 text-[10px] font-bold transition-all">
+          ▲
+        </button>
+        <button type="button" onclick="openMoveBlockModal('${taskId}')" title="Mover a cualquier horario" class="btn-reorder w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-teal-50 text-[11px] font-semibold transition-all">
+          ⇄
+        </button>
+        <button type="button" onclick="moveTask(this, 'down')" title="Mover hacia abajo" class="btn-reorder w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-slate-200 text-[10px] font-bold transition-all">
+          ▼
+        </button>
+      `;
+
+      el.parentNode.insertBefore(wrapper, el);
+      wrapper.appendChild(btnCol);
+      el.classList.add('flex-1');
+      wrapper.appendChild(el);
+
+      attachDragEvents(wrapper);
+    }
+
+    function getActiveViewContainers(currentElement) {
+      const activeView = currentElement.closest('#monday-view-full, #monday-view-afternoon, #wednesday-view-full, #wednesday-view-afternoon, #friday-view-full, #friday-view-afternoon, #tab-mensual');
+      if (!activeView) return [];
+      return Array.from(activeView.querySelectorAll('.task-drop-target'));
+    }
+
+    function moveTask(btn, direction) {
+      const card = btn.closest('.task-card-container');
+      if (!card) return;
+      const parent = card.parentElement;
+      if (!parent) return;
+
+      const containers = getActiveViewContainers(card);
+      const currentContainerIdx = containers.indexOf(parent);
+
+      if (direction === 'up') {
+        const prev = card.previousElementSibling;
+        if (prev && prev.classList.contains('task-card-container')) {
+          parent.insertBefore(card, prev);
+        } else if (currentContainerIdx > 0) {
+          // Si está en el tope de este horario, saltar al final del horario anterior
+          const prevContainer = containers[currentContainerIdx - 1];
+          prevContainer.appendChild(card);
+          highlightCardMove(card);
+        }
+      } else if (direction === 'down') {
+        const next = card.nextElementSibling;
+        if (next && next.classList.contains('task-card-container')) {
+          next.after(card);
+        } else if (currentContainerIdx !== -1 && currentContainerIdx < containers.length - 1) {
+          // Si está al final de este horario, saltar al inicio del siguiente horario
+          const nextContainer = containers[currentContainerIdx + 1];
+          nextContainer.insertBefore(card, nextContainer.firstChild);
+          highlightCardMove(card);
+        }
+      }
+
+      checkEmptyContainers();
+      saveAllOrders();
+    }
+
+    function highlightCardMove(card) {
+      card.classList.add('ring-2', 'ring-teal-500', 'bg-teal-50/40');
+      setTimeout(() => {
+        card.classList.remove('ring-2', 'ring-teal-500', 'bg-teal-50/40');
+      }, 700);
+    }
+
+    function attachContainerDropEvents(container) {
+      container.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        container.classList.add('drag-target-hover');
+      });
+
+      container.addEventListener('dragleave', (e) => {
+        if (!container.contains(e.relatedTarget)) {
+          container.classList.remove('drag-target-hover');
+        }
+      });
+
+      container.addEventListener('drop', (e) => {
+        e.preventDefault();
+        container.classList.remove('drag-target-hover');
+        if (!draggedItem) return;
+
+        // Si se suelta directamente en el contenedor (o está vacío)
+        if (e.target === container || !container.querySelector('.task-card-container:hover')) {
+          container.appendChild(draggedItem);
+          checkEmptyContainers();
+          saveAllOrders();
+        }
+      });
+    }
+
+    function attachDragEvents(el) {
+      el.addEventListener('dragstart', (e) => {
+        draggedItem = el;
+        el.classList.add('is-dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', el.getAttribute('data-task-id'));
+      });
+
+      el.addEventListener('dragend', () => {
+        el.classList.remove('is-dragging');
+        document.querySelectorAll('.task-card-container').forEach(c => {
+          c.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        document.querySelectorAll('.task-drop-target').forEach(c => {
+          c.classList.remove('drag-target-hover');
+        });
+        checkEmptyContainers();
+        saveAllOrders();
+        draggedItem = null;
+      });
+
+      el.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (!draggedItem || draggedItem === el) return;
+
+        const rect = el.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+          el.classList.add('drag-over-top');
+          el.classList.remove('drag-over-bottom');
+        } else {
+          el.classList.add('drag-over-bottom');
+          el.classList.remove('drag-over-top');
+        }
+      });
+
+      el.addEventListener('dragleave', () => {
+        el.classList.remove('drag-over-top', 'drag-over-bottom');
+      });
+
+      el.addEventListener('drop', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        el.classList.remove('drag-over-top', 'drag-over-bottom');
+        if (!draggedItem || draggedItem === el) return;
+        
+        const targetParent = el.parentElement;
+        if (!targetParent) return;
+
+        const rect = el.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        if (e.clientY < midY) {
+          targetParent.insertBefore(draggedItem, el);
+        } else {
+          el.after(draggedItem);
+        }
+        checkEmptyContainers();
+        saveAllOrders();
+      });
+    }
+
+    function openMoveBlockModal(taskId) {
+      movingTaskId = taskId;
+      const card = document.querySelector(`[data-task-id="${taskId}"]`);
+      if (!card) return;
+
+      const containers = getActiveViewContainers(card);
+      const optionsBox = document.getElementById('move-block-options');
+      optionsBox.innerHTML = '';
+
+      containers.forEach(container => {
+        const section = container.closest('section');
+        let title = 'Bloque';
+        let schedule = '';
+
+        if (section) {
+          const h2h3 = section.querySelector('h3, h2');
+          if (h2h3) title = h2h3.textContent.trim();
+          const tag = section.querySelector('.schedule-tag');
+          if (tag) schedule = tag.textContent.trim();
+        }
+
+        const isCurrent = container.contains(card);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `w-full text-left p-3 rounded-xl border text-xs sm:text-sm font-medium transition-all flex items-center justify-between gap-2 ${
+          isCurrent 
+            ? 'bg-slate-100 border-slate-300 text-slate-400 cursor-default' 
+            : 'bg-white border-slate-200 text-slate-800 hover:border-teal-500 hover:bg-teal-50/50'
+        }`;
+        btn.innerHTML = `
+          <div>
+            <div class="font-bold text-slate-800">${escapeHtml(title)}</div>
+            ${schedule ? `<div class="text-[11px] text-teal-700 font-semibold mt-0.5">${escapeHtml(schedule)}</div>` : ''}
+          </div>
+          ${isCurrent ? '<span class="text-[11px] font-semibold text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">Actual</span>' : '<span class="text-teal-600 font-bold">Mover aquí →</span>'}
+        `;
+
+        if (!isCurrent) {
+          btn.onclick = () => {
+            transferTaskToContainer(movingTaskId, container.id);
+            closeMoveBlockModal();
+          };
+        }
+
+        optionsBox.appendChild(btn);
+      });
+
+      document.getElementById('move-block-modal').classList.remove('hidden');
+    }
+
+    function closeMoveBlockModal() {
+      document.getElementById('move-block-modal').classList.add('hidden');
+      movingTaskId = null;
+    }
+
+    function transferTaskToContainer(taskId, targetContainerId) {
+      const card = document.querySelector(`[data-task-id="${taskId}"]`);
+      const targetContainer = document.getElementById(targetContainerId);
+      if (!card || !targetContainer) return;
+
+      targetContainer.appendChild(card);
+      highlightCardMove(card);
+      checkEmptyContainers();
+      saveAllOrders();
+    }
+
+    function saveAllOrders() {
+      if (!localData.taskOrders) localData.taskOrders = {};
+
+      document.querySelectorAll('.task-drop-target').forEach(container => {
+        if (!container.id) return;
+        const order = [];
+        container.querySelectorAll(':scope > .task-card-container').forEach(card => {
+          const id = card.getAttribute('data-task-id');
+          if (id) order.push(id);
+        });
+        localData.taskOrders[container.id] = order;
+      });
+
+      syncState();
+    }
+
+    function applyAllSavedOrders() {
+      if (!localData.taskOrders) return;
+
+      Object.keys(localData.taskOrders).forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        const order = localData.taskOrders[containerId];
+        if (!Array.isArray(order)) return;
+
+        order.forEach(id => {
+          const card = document.querySelector(`.task-card-container[data-task-id="${id}"]`);
+          if (card) {
+            container.appendChild(card);
+          }
+        });
+      });
+
+      checkEmptyContainers();
+    }
+
+    function promptResetOrderModal() {
+      document.getElementById('reset-order-modal').classList.remove('hidden');
+    }
+
+    function closeResetOrderModal() {
+      document.getElementById('reset-order-modal').classList.add('hidden');
+    }
+
+    function confirmResetOrder() {
+      localData.taskOrders = {};
+      closeResetOrderModal();
+      syncState();
+      location.reload();
+    }
+
+    function setDayMode(day, mode, triggerSync = true) {
+      const dayPrefixMap = {
+        'lunes': { key: 'mondayMode', btnFull: 'monday-btn-full', btnAfternoon: 'monday-btn-afternoon', viewFull: 'monday-view-full', viewAfternoon: 'monday-view-afternoon', badge: 'monday-badge' },
+        'miercoles': { key: 'wednesdayMode', btnFull: 'wednesday-btn-full', btnAfternoon: 'wednesday-btn-afternoon', viewFull: 'wednesday-view-full', viewAfternoon: 'wednesday-view-afternoon', badge: 'wednesday-badge' },
+        'viernes': { key: 'fridayMode', btnFull: 'friday-btn-full', btnAfternoon: 'friday-btn-afternoon', viewFull: 'friday-view-full', viewAfternoon: 'friday-view-afternoon', badge: 'friday-badge' }
+      };
+
+      const config = dayPrefixMap[day];
+      if (!config) return;
+
+      localData[config.key] = mode;
+      const btnFull = document.getElementById(config.btnFull);
+      const btnAfternoon = document.getElementById(config.btnAfternoon);
+      const viewFull = document.getElementById(config.viewFull);
+      const viewAfternoon = document.getElementById(config.viewAfternoon);
+      const badge = document.getElementById(config.badge);
 
       if (mode === 'afternoon') {
         if (btnFull) btnFull.className = 'px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-amber-700 transition-all flex items-center gap-1.5';
@@ -904,11 +1631,16 @@
         if (btnAfternoon) btnAfternoon.className = 'px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5';
         if (viewFull) viewFull.classList.remove('hidden');
         if (viewAfternoon) viewAfternoon.classList.add('hidden');
-        if (badge) badge.textContent = 'Jornada matutina habitual (8 horas)';
+        if (badge) badge.textContent = 'Jornada Completa de 8 Horas';
       }
 
       updateAllProgress();
       if (triggerSync) syncState();
+    }
+
+    // Compatibilidad retroactiva
+    function setMondayMode(mode, triggerSync = true) {
+      setDayMode('lunes', mode, triggerSync);
     }
 
     function updateMonthLabels(monthIndex) {
@@ -933,11 +1665,11 @@
       const isShift8 = startHour === '08:00';
 
       if (isShift8) {
-        shift8Btn.className = 'px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm';
-        shift9Btn.className = 'px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all';
+        if (shift8Btn) shift8Btn.className = 'px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm';
+        if (shift9Btn) shift9Btn.className = 'px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all';
       } else {
-        shift9Btn.className = 'px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm';
-        shift8Btn.className = 'px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all';
+        if (shift9Btn) shift9Btn.className = 'px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm';
+        if (shift8Btn) shift8Btn.className = 'px-3 py-1 rounded-lg font-medium text-teal-100 hover:text-white transition-all';
       }
 
       document.querySelectorAll('.schedule-tag').forEach(tag => {
@@ -990,15 +1722,23 @@
     }
 
     function updateAllProgress() {
-      // 1. Progreso de la pestaña visible
       const visibleTab = document.querySelector('.day-tab:not(.hidden)');
       if (visibleTab) {
-        // En lunes, contabilizar solo las tareas del modo activo (full o afternoon)
         let checkboxes;
         if (visibleTab.id === 'tab-lunes') {
           const activeSubView = localData.mondayMode === 'afternoon' 
             ? document.getElementById('monday-view-afternoon') 
             : document.getElementById('monday-view-full');
+          checkboxes = activeSubView ? activeSubView.querySelectorAll('input[type="checkbox"]') : [];
+        } else if (visibleTab.id === 'tab-miercoles') {
+          const activeSubView = localData.wednesdayMode === 'afternoon' 
+            ? document.getElementById('wednesday-view-afternoon') 
+            : document.getElementById('wednesday-view-full');
+          checkboxes = activeSubView ? activeSubView.querySelectorAll('input[type="checkbox"]') : [];
+        } else if (visibleTab.id === 'tab-viernes') {
+          const activeSubView = localData.fridayMode === 'afternoon' 
+            ? document.getElementById('friday-view-afternoon') 
+            : document.getElementById('friday-view-full');
           checkboxes = activeSubView ? activeSubView.querySelectorAll('input[type="checkbox"]') : [];
         } else {
           checkboxes = visibleTab.querySelectorAll('input[type="checkbox"]');
@@ -1012,7 +1752,6 @@
         if (progressEl) progressEl.textContent = `${checked}/${total} (${pct}%)`;
       }
 
-      // 2. Progreso específico del plan mensual
       const monthlyTab = document.getElementById('tab-mensual');
       if (monthlyTab) {
         const mCheckboxes = monthlyTab.querySelectorAll('input[type="checkbox"]');
@@ -1068,15 +1807,22 @@
       if (localData.tasks) delete localData.tasks[taskId];
       
       const el = document.getElementById('wrapper-' + taskId);
-      if (el) el.remove();
+      if (el) {
+        const wrapper = el.closest('.task-card-container');
+        if (wrapper) wrapper.remove();
+        else el.remove();
+      }
 
       updateAllProgress();
       syncState();
     }
 
     function renderCustomMonthlyTasks() {
-      // Eliminar elementos custom renderizados previos
-      document.querySelectorAll('.custom-monthly-item').forEach(el => el.remove());
+      document.querySelectorAll('.custom-monthly-item').forEach(el => {
+        const wrapper = el.closest('.task-card-container');
+        if (wrapper) wrapper.remove();
+        else el.remove();
+      });
 
       if (!localData.customMonthlyTasks) return;
 
@@ -1087,7 +1833,7 @@
         const isChecked = !!(localData.tasks && localData.tasks[task.id]);
         const wrapper = document.createElement('div');
         wrapper.id = 'wrapper-' + task.id;
-        wrapper.className = 'custom-monthly-item flex items-center gap-2';
+        wrapper.className = 'custom-monthly-item flex items-center gap-2 flex-1';
 
         wrapper.innerHTML = `
           <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400 flex-1 ${isChecked ? 'completed' : ''}">
@@ -1103,6 +1849,7 @@
         `;
 
         container.appendChild(wrapper);
+        wrapTaskWithReorderControls(wrapper, container);
       });
     }
 
@@ -1122,7 +1869,7 @@
 
       if (target === 'weekly') {
         title.textContent = '¿Reiniciar tareas semanales?';
-        desc.textContent = 'Se desmarcarán únicamente las tareas de Lunes, Miércoles y Viernes. Las tareas mensuales se conservarán.';
+        desc.textContent = 'Se desmarcarán únicamente las tareas de Lunes, Miércoles y Viernes. Las tareas del plan mensual se conservarán.';
       } else {
         title.textContent = '¿Reiniciar tareas del mes?';
         desc.textContent = 'Se desmarcarán las tareas del plan mensual de las 4 semanas para comenzar el nuevo mes.';
@@ -1167,9 +1914,9 @@
       syncState();
     }
 
-    // Inicialización al cargar el DOM
     document.addEventListener('DOMContentLoaded', () => {
-      // Cargar respaldo local previo
+      setupReorderControls();
+
       try {
         const saved = localStorage.getItem('veronica_routine_data');
         if (saved) applyDataToUI(JSON.parse(saved));
@@ -1177,7 +1924,6 @@
         console.warn("Fallo cargando cache local", e);
       }
 
-      // Conectar a Firebase
       initFirebase();
       updateAllProgress();
     });
