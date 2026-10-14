@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Rutina de Limpieza Semanal y Mensual - Verónica</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Firebase JS SDK (Compat mode para persistencia en nube) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -25,13 +25,12 @@
     .task-card-container.is-dragging { opacity: 0.45; transform: scale(0.98); }
     .task-card-container.drag-over-top { border-top: 3px solid #0f766e !important; }
     .task-card-container.drag-over-bottom { border-bottom: 3px solid #0f766e !important; }
-    .reorder-handle:hover { cursor: grab; }
-    .reorder-handle:active { cursor: grabbing; }
-    .btn-reorder:hover { background-color: #e2e8f0; color: #0f766e; }
-    .task-drop-target { min-height: 48px; border: 2px dashed transparent; transition: all 0.2s ease; border-radius: 0.75rem; }
+    .btn-action { transition: all 0.15s ease; }
+    .btn-action:hover { transform: scale(1.08); }
+    .task-drop-target { min-height: 44px; border: 2px dashed transparent; transition: all 0.2s ease; border-radius: 0.75rem; }
     .task-drop-target.drag-target-hover { border-color: #0d9488 !important; background-color: #f0fdfa !important; }
     .task-drop-target.is-empty:empty::before {
-      content: 'Arrastra o mueve tareas aquí con ▲ ▼ o ⇄';
+      content: 'Sin tareas en este bloque. Presiona "+ Agregar Tarea" para crear una.';
       display: flex;
       align-items: center;
       justify-content: center;
@@ -42,37 +41,50 @@
       border: 2px dashed #cbd5e1;
       border-radius: 0.75rem;
       margin-bottom: 0.25rem;
+      background-color: #f8fafc;
+    }
+    @media print {
+      header, nav, .no-print, button, .btn-action { display: none !important; }
+      body { background: #ffffff !important; color: #000000 !important; font-size: 11pt; }
+      .day-tab { display: block !important; margin-bottom: 2rem; page-break-after: always; }
+      .task-item { border: 1px solid #ccc !important; box-shadow: none !important; }
     }
   </style>
 </head>
 <body class="text-slate-800 min-h-screen pb-16">
 
   <!-- Encabezado Principal con Indicadores y Selectores -->
-  <header class="bg-gradient-to-r from-teal-800 to-teal-700 text-white py-6 px-4 shadow-lg mb-6 border-b border-teal-600">
+  <header class="bg-gradient-to-r from-teal-800 via-teal-700 to-teal-800 text-white py-6 px-4 shadow-lg mb-6 border-b border-teal-600">
     <div class="max-w-4xl mx-auto">
       <div class="flex items-center justify-between flex-wrap gap-4 mb-3">
         <div>
           <div class="flex items-center gap-2">
-            <span class="text-2xl">📋</span>
+            <span class="text-2xl sm:text-3xl">📋</span>
             <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Rutina de Limpieza - Verónica</h1>
           </div>
-          <p class="text-teal-100 text-sm sm:text-base mt-1 font-medium">Jornada Completa de 8 Horas • Limpieza Integral del Hogar & Plan Mensual</p>
+          <p class="text-teal-100 text-xs sm:text-sm mt-1 font-medium">3 veces por semana • Rutina Diaria, Semanal y Plan Mensual Editable</p>
         </div>
         
-        <!-- Indicador Cloud Firebase -->
-        <div id="cloud-status" class="flex items-center gap-2 bg-teal-900/90 text-teal-200 text-xs px-3.5 py-1.5 rounded-full border border-teal-600 shadow-inner">
-          <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
-          <span id="status-text" class="font-medium">Conectando...</span>
+        <!-- Indicador de Sincronización y Acciones Rápidas -->
+        <div class="flex items-center gap-2">
+          <button onclick="window.print()" title="Imprimir o guardar como PDF" class="inline-flex items-center gap-1.5 bg-teal-900/90 hover:bg-teal-950 text-teal-100 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-full border border-teal-600 transition-all shadow-sm">
+            <span>🖨️</span>
+            <span>Imprimir</span>
+          </button>
+          <div id="cloud-status" class="flex items-center gap-2 bg-teal-900/90 text-teal-200 text-xs px-3.5 py-1.5 rounded-full border border-teal-600 shadow-inner">
+            <span id="status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+            <span id="status-text" class="font-medium">Conectando...</span>
+          </div>
         </div>
       </div>
       
-      <!-- Controles de Configuración: Horario, Selector de Mes y Progreso -->
+      <!-- Controles de Configuración: Horarios, Mes, Modo Edición y Progreso -->
       <div class="mt-4 pt-4 border-t border-teal-600/60 flex items-center justify-between flex-wrap gap-4">
         
         <div class="flex items-center flex-wrap gap-3">
           <!-- Selector de Franja Horaria de 8 Horas -->
           <div class="inline-flex items-center bg-teal-900/80 rounded-xl p-1 border border-teal-600/80 text-xs sm:text-sm">
-            <span class="px-2.5 py-1 text-teal-200 font-medium">Horario 8h:</span>
+            <span class="px-2.5 py-1 text-teal-200 font-medium">Turno:</span>
             <button onclick="setScheduleShift('08:00')" id="shift-8" class="px-3 py-1 rounded-lg font-semibold transition-all bg-white text-teal-900 shadow-sm">
               08:00 a 16:00
             </button>
@@ -81,10 +93,10 @@
             </button>
           </div>
 
-          <!-- Selector de Mes -->
+          <!-- Selector de Año y Mes -->
           <div class="inline-flex items-center bg-teal-900/80 rounded-xl px-3 py-1 border border-teal-600/80 text-xs sm:text-sm text-teal-100">
             <span class="mr-2 text-teal-300 font-medium">Mes:</span>
-            <select id="select-month" onchange="handleMonthChange()" class="bg-teal-950 text-white text-xs font-semibold py-1 px-2.5 rounded-md border border-teal-700 outline-none focus:ring-1 focus:ring-teal-400">
+            <select id="select-month" onchange="handleMonthChange()" class="bg-teal-950 text-white text-xs font-semibold py-1 px-2 rounded-md border border-teal-700 outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer">
               <option value="0">Enero</option>
               <option value="1">Febrero</option>
               <option value="2">Marzo</option>
@@ -100,20 +112,32 @@
             </select>
           </div>
 
-          <!-- Botón de Orden Personalizado -->
-          <button type="button" onclick="promptResetOrderModal()" title="Volver al orden predeterminado" class="inline-flex items-center gap-1.5 bg-teal-900/80 hover:bg-teal-950 text-teal-200 hover:text-white text-xs font-semibold px-3 py-1.5 rounded-xl border border-teal-600/80 transition-all shadow-sm">
+          <!-- Selector de Semana del Mes con Rango de Fechas -->
+          <div class="inline-flex items-center bg-teal-900/80 rounded-xl px-3 py-1 border border-teal-600/80 text-xs sm:text-sm text-teal-100">
+            <span class="mr-2 text-amber-300 font-medium">Semana:</span>
+            <select id="select-week" onchange="handleWeekChange()" class="bg-teal-950 text-white text-xs font-semibold py-1 px-2 rounded-md border border-teal-700 outline-none focus:ring-1 focus:ring-teal-400 cursor-pointer">
+              <option value="1">Semana 1 (Días 1 al 7)</option>
+              <option value="2">Semana 2 (Días 8 al 14)</option>
+              <option value="3">Semana 3 (Días 15 al 21)</option>
+              <option value="4">Semana 4 (Días 22 al 28)</option>
+              <option value="5">Semana 5 (Fin de mes)</option>
+            </select>
+          </div>
+
+          <!-- Botón Restaurar Tareas Originales -->
+          <button type="button" onclick="promptRestoreDefaultsModal()" title="Recuperar la rutina y tareas sugeridas originales" class="inline-flex items-center gap-1 bg-teal-900/80 hover:bg-teal-950 text-teal-200 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-xl border border-teal-600/80 transition-all shadow-sm">
             <span>🔄</span>
-            <span>Restablecer Orden</span>
+            <span>Restaurar Predeterminados</span>
           </button>
         </div>
 
         <!-- Indicadores de Progreso -->
-        <div class="flex items-center gap-4 text-xs font-semibold">
-          <div class="bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-600/60">
+        <div class="flex items-center gap-3 text-xs font-semibold">
+          <div class="bg-teal-900/70 px-3 py-1.5 rounded-lg border border-teal-600/70">
             <span class="text-teal-200">Día actual:</span>
             <span id="progress-text" class="text-white ml-1">0/0 (0%)</span>
           </div>
-          <div class="bg-teal-900/60 px-3 py-1.5 rounded-lg border border-teal-600/60 hidden sm:block">
+          <div class="bg-teal-900/70 px-3 py-1.5 rounded-lg border border-teal-600/70 hidden sm:block">
             <span class="text-amber-300">Plan Mensual:</span>
             <span id="monthly-progress-text" class="text-white ml-1">0/0 (0%)</span>
           </div>
@@ -125,58 +149,86 @@
 
   <main class="max-w-4xl mx-auto px-4">
     
-    <!-- Barra de Pestañas Principal -->
+    <!-- Barra de Pestañas Principal con Fechas Dinámicas -->
     <nav class="grid grid-cols-2 sm:grid-cols-4 rounded-2xl bg-slate-200 p-1.5 mb-6 shadow-inner gap-1.5" aria-label="Navegación semanal y mensual">
-      <button onclick="switchTab('lunes')" id="btn-lunes" class="tab-btn tab-active py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all">
-        Lunes
+      <button onclick="switchTab('lunes')" id="btn-lunes" class="tab-btn tab-active py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all flex flex-col items-center justify-center">
+        <span>Lunes</span>
+        <span id="tab-date-lunes" class="text-[11px] font-normal opacity-90">--/--</span>
       </button>
-      <button onclick="switchTab('miercoles')" id="btn-miercoles" class="tab-btn tab-inactive py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all">
-        Miércoles
+      <button onclick="switchTab('miercoles')" id="btn-miercoles" class="tab-btn tab-inactive py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all flex flex-col items-center justify-center">
+        <span>Miércoles</span>
+        <span id="tab-date-miercoles" class="text-[11px] font-normal opacity-90">--/--</span>
       </button>
-      <button onclick="switchTab('viernes')" id="btn-viernes" class="tab-btn tab-inactive py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all">
-        Viernes
+      <button onclick="switchTab('viernes')" id="btn-viernes" class="tab-btn tab-inactive py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all flex flex-col items-center justify-center">
+        <span>Viernes</span>
+        <span id="tab-date-viernes" class="text-[11px] font-normal opacity-90">--/--</span>
       </button>
-      <button onclick="switchTab('mensual')" id="btn-mensual" class="tab-btn tab-inactive py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all flex items-center justify-center gap-1.5">
-        <span>📅</span>
-        <span>Plan Mensual</span>
+      <button onclick="switchTab('mensual')" id="btn-mensual" class="tab-btn tab-inactive py-2.5 px-3 text-center rounded-xl font-bold text-sm sm:text-base transition-all flex flex-col items-center justify-center">
+        <span class="flex items-center gap-1.5"><span>📅</span> Plan Mensual</span>
+        <span id="tab-date-mensual" class="text-[11px] font-normal opacity-90">Cronograma</span>
       </button>
     </nav>
 
-    <!-- Banner General de Reglas Cruciales -->
-    <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3.5 mb-6 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
-      <div class="flex items-start sm:items-center gap-2">
-        <span class="text-lg">⚠️</span>
-        <span><strong>Reglas clave del hogar:</strong> Tender y colgar la ropa siempre <u>al revés</u>. En la plancha (máx 1h diaria), lo primordial es que los <u>cuellos queden impecables y firmes</u>. No olvidar limpiar siempre <u>debajo del televisor</u> y repasar los <u>estantes de la cocina</u>.</span>
+    <!-- Banner General de Reglas Cruciales Editable -->
+    <div class="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 mb-6 text-xs sm:text-sm shadow-sm relative group">
+      <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start gap-2.5">
+          <span class="text-xl">⚠️</span>
+          <div>
+            <strong class="font-bold text-amber-950">Reglas clave del hogar:</strong>
+            <p id="banner-rules-text" class="mt-0.5 leading-relaxed text-amber-900">
+              Tender y colgar la ropa siempre al revés. En la plancha (máx 1h diaria), lo primordial es que los cuellos queden impecables y firmes. No olvidar limpiar siempre debajo del televisor y repasar los estantes de la cocina.
+            </p>
+          </div>
+        </div>
+        <button onclick="openEditRulesModal()" title="Editar texto de reglas generales" class="flex-shrink-0 text-amber-700 hover:text-amber-950 hover:bg-amber-100 p-1.5 rounded-lg transition-colors text-xs font-semibold flex items-center gap-1">
+          <span>✏️</span>
+          <span class="hidden sm:inline">Editar Reglas</span>
+        </button>
       </div>
-      <div class="text-xs text-amber-800 bg-amber-100 px-2.5 py-1 rounded-lg font-medium self-end sm:self-auto flex items-center gap-1">
-        <span>↕️</span>
-        <span>Mueve tareas libremente entre cualquier horario con ▲ ▼, ⇄ o arrastrando</span>
+      <div class="mt-2.5 pt-2.5 border-t border-amber-200/60 flex items-center justify-between text-[11px] text-amber-800 flex-wrap gap-2 font-medium">
+        <span>💡 Puedes editar cualquier tarea con el lápiz ✏️, agregar nuevas con ➕ o arrastrarlas con ↕️.</span>
+        <span class="bg-amber-200/60 px-2 py-0.5 rounded text-amber-950">Guardado automático en la nube</span>
       </div>
     </div>
 
-    <!-- CONTENIDO LUNES -->
+    <!-- CONTENEDOR LUNES -->
     <div id="tab-lunes" class="day-tab space-y-6">
       
-      <!-- Selector de Modalidad para el Lunes -->
+      <!-- Banner de Fecha y Modalidad para el Lunes -->
       <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-4">
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Modalidad del Lunes</span>
-              <span id="monday-badge" class="text-xs font-medium text-slate-500">Jornada Completa de 8 Horas</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Fecha de Jornada</span>
+              <h2 id="banner-date-lunes" class="text-base sm:text-lg font-extrabold text-teal-900">Lunes -- de Mes</h2>
             </div>
-            <p class="text-xs text-slate-600 mt-1">Alternar según trabaje la jornada completa de 8h o el medio tiempo de la tarde (4h):</p>
+            <p id="monday-badge" class="text-xs text-slate-500 mt-1 font-medium">Jornada Completa de 8 Horas</p>
           </div>
           <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs sm:text-sm font-semibold">
-            <button type="button" onclick="setMondayMode('full')" id="monday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
+            <button type="button" onclick="setDayMode('lunes', 'full')" id="monday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
               <span>☀️</span> Jornada Completa (8h)
             </button>
-            <button type="button" onclick="setMondayMode('afternoon')" id="monday-btn-afternoon" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5">
+            <button type="button" onclick="setDayMode('lunes', 'afternoon')" id="monday-btn-afternoon" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5">
               <span>🌤️</span> Medio Tiempo Tarde (4h)
             </button>
           </div>
         </div>
       </div>
+
+      <!-- Sección de Tareas del Plan Mensual Asignadas a este Lunes -->
+      <section id="assigned-monthly-lunes-section" class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200/90 p-5 hidden">
+        <div class="flex items-center justify-between border-b border-amber-200 pb-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📌</span>
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-amber-950">Tareas del Plan Mensual asignadas para este Lunes</h3>
+              <p class="text-xs text-amber-800">Objetivos profundos programados para resolver en esta jornada.</p>
+            </div>
+          </div>
+        </div>
+        <div id="assigned-monthly-lunes-list" class="space-y-2.5"></div>
+      </section>
 
       <!-- VISTA LUNES: JORNADA COMPLETA (8 HORAS) -->
       <div id="monday-view-full" class="space-y-6">
@@ -187,38 +239,11 @@
               <span class="text-teal-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="08:00 - 10:00 (2h)" data-alt="09:00 - 11:00 (2h)">08:00 - 10:00 (2h)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'full', 'b1')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-b1" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Revisar lavaplatos, estantes y despejar cocina</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Guardar vajilla limpia o encender ciclo si quedó vajilla sucia. Despejar mesada, repasar los estantes de la cocina y pileta.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Lavarropas (1.ª tanda): prendas claras o ropa de cama</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Separar y poner a andar. <strong>Recordatorio:</strong> poner siempre a secar y colgar la ropa <u>al revés</u>.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Comederos, bebederos y ventilación inicial</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar recipientes de Isabella y Chaska con agua fresca, abrir ventanas para ventilar toda la casa.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska</span>
-                <span class="schedule-tag text-xs px-2.5 py-0.5 rounded-md bg-teal-50 text-teal-700 font-semibold" data-base="09:00 - 10:00" data-alt="10:00 - 11:00">09:00 - 10:00</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Sacarlas al parque con tiempo adecuado (1 hora), hidratarlas al regresar y limpiar patitas.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-full-b1" class="space-y-3 task-drop-target"></div>
         </section>
 
         <!-- Bloque 2 -->
@@ -228,37 +253,11 @@
               <span class="text-teal-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'full', 'b2')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-b2" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Desinfección completa de baños</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar y desinfectar inodoro, bidet, lavatorio, grifería, repasar mampara, reponer jabón y papel.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t6" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Dormitorios: camas, mesas de noche y orden</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tender camas con prolijidad, sacudir almohadas, retirar polvo de mesas de noche y guardar ropa fuera de lugar.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t7" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Computadora, escritorio y sillón</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar con paño suave la pantalla y teclado de la computadora, aspirar y acomodar almohadones del sillón.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t8" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Sala principal y mueble de TV</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar repisas, mesas bajas y <u>siempre limpiar debajo del mueble del televisor</u>.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-full-b2" class="space-y-3 task-drop-target"></div>
         </section>
 
         <!-- Bloque 3 -->
@@ -268,16 +267,11 @@
               <span class="text-amber-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-amber-800" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'full', 'b3')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-b3" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-amber-50/40 cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-f-t9" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Planchado de ropa (Máx 1h) - Cuellos impecables</span>
-                <span class="text-xs sm:text-sm text-slate-600 mt-0.5 block">Planchar camisas, pantalones y remeras. <strong>REGLA FUNDAMENTAL:</strong> Lo que más importa es que los <u>cuellos queden impecables, alineados y bien firmes</u>. Colgar en perchas de inmediato.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-full-b3" class="space-y-3 task-drop-target"></div>
         </section>
 
         <!-- Bloque 4 -->
@@ -287,16 +281,11 @@
               <span class="text-slate-600 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-slate-700" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'full', 'b4')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-b4" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t10" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Pausa de almuerzo & descanso</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Almuerzo personal, refrigerio e hidratación. Dejar el espacio de comida limpio y ordenado.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-full-b4" class="space-y-3 task-drop-target"></div>
         </section>
 
         <!-- Bloque 5 -->
@@ -306,23 +295,11 @@
               <span class="text-teal-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'full', 'b5')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-b5" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t11" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Avanzar con la tarea profunda del Plan Mensual</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Realizar la tarea asignada según la semana del mes (S1: cocina/horno/heladera; S2: vidrios/persianas; S3: textiles; S4: azulejos/zócalos).</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t12" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Tender 2.ª tanda y guardar ropa seca doblada</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Colgar la segunda tanda <u>siempre al revés</u>. Descolgar prendas secas, doblarlas y guardarlas en sus placares.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-full-b5" class="space-y-3 task-drop-target"></div>
         </section>
 
         <!-- Bloque 6 -->
@@ -332,30 +309,11 @@
               <span class="text-teal-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'full', 'b6')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-b6" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t13" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Aspirar o barrer todos los ambientes de la casa</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cocina, living, pasillos, dormitorios, debajo de camas y rincones accesibles.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t14" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Trapear y desinfectar pisos con aroma agradable</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Trapear desde el fondo hacia la salida. Enjuagar bien el trapo entre ambientes.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-              <input type="checkbox" id="l-f-t15" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Vaciar todos los tachos de basura y reponer bolsas</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Tachos de cocina, baños y dormitorios. Sacar la bolsa al contenedor exterior y dejar paños limpios secando.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-full-b6" class="space-y-3 task-drop-target"></div>
         </section>
       </div>
 
@@ -367,44 +325,11 @@
               <span class="text-amber-800 text-lg">⏰</span>
               <h3 class="text-base sm:text-lg font-extrabold text-amber-900">13:30 - 17:30 (4h)</h3>
             </div>
+            <button onclick="openAddTaskModal('lunes', 'afternoon', 'b1')" class="text-xs bg-amber-200/70 hover:bg-amber-200 text-amber-900 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-lunes-afternoon" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-a-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Lavaplatos, mesadas y primera tanda de lavarropas</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Despejar cocina y poner lavarropas a andar. <strong>Recordar:</strong> colgar la ropa <u>al revés</u>.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-a-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 hora de tarde)</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Sacarlas al parque en horario de tarde, refrescar agua y darles comida.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-a-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Planchado intensivo (Máx 1h) - Cuellos impecables</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Máximo 1 hora. Asegurar que los <u>cuellos queden perfectamente planchados y firmes</u>.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-a-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Repaso de baños, computadora, sillón y debajo de TV</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desinfectar inodoros/lavatorios y limpiar el área de computación y debajo del mueble de TV.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="l-a-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Barrer, trapear pisos principales y sacar basura</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pasar mopa con perfume en pisos y retirar residuos de la casa.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-lunes-afternoon-b1" class="space-y-3 task-drop-target"></div>
         </section>
       </div>
 
@@ -422,10 +347,10 @@
         <div class="flex items-center justify-between flex-wrap gap-3">
           <div>
             <div class="flex items-center gap-2">
-              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Modalidad del Miércoles</span>
-              <span id="wednesday-badge" class="text-xs font-medium text-slate-500">Jornada Completa de 8 Horas</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Fecha de Jornada</span>
+              <h2 id="banner-date-miercoles" class="text-base sm:text-lg font-extrabold text-teal-900">Miércoles -- de Mes</h2>
             </div>
-            <p class="text-xs text-slate-600 mt-1">Alternar según trabaje la jornada completa de 8h o el medio tiempo de la tarde (4h):</p>
+            <p id="wednesday-badge" class="text-xs text-slate-500 mt-1 font-medium">Jornada Completa de 8 Horas</p>
           </div>
           <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs sm:text-sm font-semibold">
             <button type="button" onclick="setDayMode('miercoles', 'full')" id="wednesday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
@@ -438,6 +363,20 @@
         </div>
       </div>
 
+      <!-- Sección de Tareas del Plan Mensual Asignadas a este Miércoles -->
+      <section id="assigned-monthly-miercoles-section" class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200/90 p-5 hidden">
+        <div class="flex items-center justify-between border-b border-amber-200 pb-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📌</span>
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-amber-950">Tareas del Plan Mensual asignadas para este Miércoles</h3>
+              <p class="text-xs text-amber-800">Objetivos profundos programados para resolver en esta jornada.</p>
+            </div>
+          </div>
+        </div>
+        <div id="assigned-monthly-miercoles-list" class="space-y-2.5"></div>
+      </section>
+
       <!-- VISTA MIÉRCOLES: JORNADA COMPLETA (8 HORAS) -->
       <div id="wednesday-view-full" class="space-y-6">
         <!-- Bloque 1 -->
@@ -447,59 +386,84 @@
               <span class="text-teal-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="08:00 - 10:00 (2h)" data-alt="09:00 - 11:00 (2h)">08:00 - 10:00 (2h)</h3>
             </div>
+            <button onclick="openAddTaskModal('miercoles', 'full', 'b1')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-miercoles-b1" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 2 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-teal-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</h3>
+          <div id="container-miercoles-full-b1" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 2 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-teal-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</h3>
+            </div>
+            <button onclick="openAddTaskModal('miercoles', 'full', 'b2')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-        </div>
-        <div id="container-miercoles-b2" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 3 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-amber-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-amber-800" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</h3>
+          <div id="container-miercoles-full-b2" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 3 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-amber-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-amber-800" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</h3>
+            </div>
+            <button onclick="openAddTaskModal('miercoles', 'full', 'b3')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-        </div>
-        <div id="container-miercoles-b3" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 4 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-slate-600 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-slate-700" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</h3>
+          <div id="container-miercoles-full-b3" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 4 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-600 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-slate-700" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</h3>
+            </div>
+            <button onclick="openAddTaskModal('miercoles', 'full', 'b4')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-        </div>
-        <div id="container-miercoles-b4" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 5 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-teal-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</h3>
+          <div id="container-miercoles-full-b4" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 5 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-teal-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</h3>
+            </div>
+            <button onclick="openAddTaskModal('miercoles', 'full', 'b5')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-        </div>
-        <div id="container-miercoles-b5" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 6 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-teal-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</h3>
+          <div id="container-miercoles-full-b5" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 6 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-teal-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</h3>
+            </div>
+            <button onclick="openAddTaskModal('miercoles', 'full', 'b6')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-        </div>
-        <div id="container-miercoles-b6" class="space-y-3">
-<!-- ... existing code -->
+          <div id="container-miercoles-full-b6" class="space-y-3 task-drop-target"></div>
+        </section>
+      </div>
+
       <!-- VISTA MIÉRCOLES: MEDIO TIEMPO TARDE (4 HORAS: 13:30 A 17:30) -->
       <div id="wednesday-view-afternoon" class="space-y-6 hidden">
         <section class="bg-amber-50/60 rounded-2xl shadow-sm border border-amber-200 p-5">
@@ -508,9 +472,58 @@
               <span class="text-amber-800 text-lg">⏰</span>
               <h3 class="text-base sm:text-lg font-extrabold text-amber-900">13:30 - 17:30 (4h)</h3>
             </div>
+            <button onclick="openAddTaskModal('miercoles', 'afternoon', 'b1')" class="text-xs bg-amber-200/70 hover:bg-amber-200 text-amber-900 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-miercoles-afternoon" class="space-y-3">
-<!-- ... existing code -->
+          <div id="container-miercoles-afternoon-b1" class="space-y-3 task-drop-target"></div>
+        </section>
+      </div>
+
+      <!-- Notas del Miércoles -->
+      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+        <h3 class="text-base sm:text-lg font-bold text-teal-800 mb-2">Notas y Novedades (Miércoles)</h3>
+        <textarea id="notes-miercoles" oninput="saveNotes('miercoles')" rows="3" placeholder="Anotar productos faltantes o novedades del miércoles..." class="w-full p-3.5 border border-slate-300 rounded-xl focus:ring-2 focus:ring-teal-500 focus:border-transparent outline-none text-sm"></textarea>
+      </section>
+    </div>
+
+    <!-- CONTENIDO VIERNES -->
+    <div id="tab-viernes" class="day-tab space-y-6 hidden">
+      <!-- Selector de Modalidad para el Viernes -->
+      <div class="bg-white rounded-2xl shadow-sm border border-teal-200 p-4">
+        <div class="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-800 bg-teal-100 px-2.5 py-0.5 rounded-full">Fecha de Jornada</span>
+              <h2 id="banner-date-viernes" class="text-base sm:text-lg font-extrabold text-teal-900">Viernes -- de Mes</h2>
+            </div>
+            <p id="friday-badge" class="text-xs text-slate-500 mt-1 font-medium">Jornada Completa de 8 Horas</p>
+          </div>
+          <div class="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200 text-xs sm:text-sm font-semibold">
+            <button type="button" onclick="setDayMode('viernes', 'full')" id="friday-btn-full" class="px-3.5 py-1.5 rounded-lg bg-teal-700 text-white shadow-sm transition-all flex items-center gap-1.5">
+              <span>☀️</span> Jornada Completa (8h)
+            </button>
+            <button type="button" onclick="setDayMode('viernes', 'afternoon')" id="friday-btn-afternoon" class="px-3.5 py-1.5 rounded-lg text-slate-600 hover:text-teal-700 transition-all flex items-center gap-1.5">
+              <span>🌤️</span> Medio Tiempo Tarde (4h)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección de Tareas del Plan Mensual Asignadas a este Viernes -->
+      <section id="assigned-monthly-viernes-section" class="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl shadow-sm border border-amber-200/90 p-5 hidden">
+        <div class="flex items-center justify-between border-b border-amber-200 pb-3 mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">📌</span>
+            <div>
+              <h3 class="text-sm sm:text-base font-extrabold text-amber-950">Tareas del Plan Mensual asignadas para este Viernes</h3>
+              <p class="text-xs text-amber-800">Objetivos profundos programados para resolver en esta jornada.</p>
+            </div>
+          </div>
+        </div>
+        <div id="assigned-monthly-viernes-list" class="space-y-2.5"></div>
+      </section>
+
       <!-- VISTA VIERNES: JORNADA COMPLETA (8 HORAS) -->
       <div id="friday-view-full" class="space-y-6">
         <!-- Bloque 1 -->
@@ -520,81 +533,82 @@
               <span class="text-teal-700 text-lg">⏰</span>
               <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="08:00 - 10:00 (2h)" data-alt="09:00 - 11:00 (2h)">08:00 - 10:00 (2h)</h3>
             </div>
+            <button onclick="openAddTaskModal('viernes', 'full', 'b1')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-viernes-b1" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 2 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-teal-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</h3>
-          </div>
-        </div>
-        <div id="container-viernes-b2" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 3 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-amber-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-amber-800" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</h3>
-          </div>
-        </div>
-        <div id="container-viernes-b3" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 4 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-slate-600 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-slate-700" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</h3>
-          </div>
-        </div>
-        <div id="container-viernes-b4" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 5 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-teal-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</h3>
-          </div>
-        </div>
-        <div id="container-viernes-b5" class="space-y-3">
-<!-- ... existing code -->
-      <!-- Bloque 6 -->
-      <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
-          <div class="flex items-center gap-2">
-            <span class="text-teal-700 text-lg">⏰</span>
-            <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</h3>
-          </div>
-        </div>
-        <div id="container-viernes-b6" class="space-y-3">
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="v-t11" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Aspirado minucioso de toda la casa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Pisos, alfombras, debajo de camas, zócalos y rincones de cada ambiente.</span>
+          <div id="container-viernes-full-b1" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 2 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-teal-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="10:00 - 12:00 (2h)" data-alt="11:00 - 13:00 (2h)">10:00 - 12:00 (2h)</h3>
             </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="v-t12" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Trapeado profundo y perfumado de pisos</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Doble pasada de trapo con aromatizante para dejar la casa impecable de cara al fin de semana.</span>
+            <button onclick="openAddTaskModal('viernes', 'full', 'b2')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
+          </div>
+          <div id="container-viernes-full-b2" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 3 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-amber-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-amber-800" data-base="12:00 - 13:00 (1h)" data-alt="13:00 - 14:00 (1h)">12:00 - 13:00 (1h)</h3>
             </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="v-t13" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Vaciar todos los tachos de basura y dejar insumos listos</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Bolsas limpias en todos los tachos, sacar residuos al contenedor y dejar baldes y trapos limpios.</span>
+            <button onclick="openAddTaskModal('viernes', 'full', 'b3')" class="text-xs bg-amber-100 hover:bg-amber-200 text-amber-800 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
+          </div>
+          <div id="container-viernes-full-b3" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 4 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-slate-600 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-slate-700" data-base="13:00 - 13:30 (30m)" data-alt="14:00 - 14:30 (30m)">13:00 - 13:30 (30m)</h3>
             </div>
-          </label>
-        </div>
-      </section>
+            <button onclick="openAddTaskModal('viernes', 'full', 'b4')" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
+          </div>
+          <div id="container-viernes-full-b4" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 5 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-teal-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="13:30 - 15:00 (1h 30m)" data-alt="14:30 - 16:00 (1h 30m)">13:30 - 15:00 (1h 30m)</h3>
+            </div>
+            <button onclick="openAddTaskModal('viernes', 'full', 'b5')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
+          </div>
+          <div id="container-viernes-full-b5" class="space-y-3 task-drop-target"></div>
+        </section>
+
+        <!-- Bloque 6 -->
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+            <div class="flex items-center gap-2">
+              <span class="text-teal-700 text-lg">⏰</span>
+              <h3 class="schedule-tag text-base sm:text-lg font-extrabold text-teal-800" data-base="15:00 - 16:00 (1h)" data-alt="16:00 - 17:00 (1h)">15:00 - 16:00 (1h)</h3>
+            </div>
+            <button onclick="openAddTaskModal('viernes', 'full', 'b6')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
+          </div>
+          <div id="container-viernes-full-b6" class="space-y-3 task-drop-target"></div>
+        </section>
       </div>
 
       <!-- VISTA VIERNES: MEDIO TIEMPO TARDE (4 HORAS: 13:30 A 17:30) -->
@@ -605,44 +619,11 @@
               <span class="text-amber-800 text-lg">⏰</span>
               <h3 class="text-base sm:text-lg font-extrabold text-amber-900">13:30 - 17:30 (4h)</h3>
             </div>
+            <button onclick="openAddTaskModal('viernes', 'afternoon', 'b1')" class="text-xs bg-amber-200/70 hover:bg-amber-200 text-amber-900 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span> <span>Agregar Tarea</span>
+            </button>
           </div>
-          <div id="container-viernes-afternoon" class="space-y-3">
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="v-a-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Lavaplatos, cambio de sábanas/toallas y lavarropas</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Despejar cocina, cambiar sábanas de camas y poner lavarropas (<strong>colgar al revés</strong>).</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="v-a-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Pasear a Isabella y Chaska (1 hora de tarde)</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Paseo de parque de fin de semana, agua fresca y limpiar patitas.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="v-a-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Planchado intensivo (Máx 1h) - Cuellos impecables</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Máximo 1 hora. Ropa del fin de semana con <u>cuellos firmes, derechos y sin arrugas</u>.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="v-a-t4" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Baños a fondo, computadora, sillón y mueble de TV</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desinfección de inodoros/lavatorios, sacudir sillón y <u>limpiar debajo del mueble de TV</u>.</span>
-              </div>
-            </label>
-            <label class="task-item flex items-start p-3.5 rounded-xl border border-amber-200 bg-white cursor-pointer hover:border-amber-400">
-              <input type="checkbox" id="v-a-t5" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600">
-              <div class="ml-3.5 flex-1">
-                <span class="task-title font-semibold text-slate-800 block">Aspirar/barrer, trapeado perfumado y vaciar basuras</span>
-                <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Dejar la casa impecable de cara al fin de semana y retirar residuos.</span>
-              </div>
-            </label>
-          </div>
+          <div id="container-viernes-afternoon-b1" class="space-y-3 task-drop-target"></div>
         </section>
       </div>
 
@@ -666,7 +647,7 @@
             </div>
             <p class="text-xs sm:text-sm text-slate-500 mt-1">Tareas profundas distribuidas en las 4 semanas del mes para no sobrecargar los días ordinarios.</p>
           </div>
-          <button onclick="openAddTaskModal()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all">
+          <button onclick="openAddTaskModal('mensual', 'plan', 's1')" class="inline-flex items-center gap-1.5 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-xl text-xs sm:text-sm font-bold shadow-sm transition-all">
             <span>➕</span>
             <span>Agregar Tarea Mensual</span>
           </button>
@@ -691,31 +672,14 @@
             <span class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-extrabold text-xs">S1</span>
             <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 1: Cocina a Fondo & Electrodomésticos</h3>
           </div>
-          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 1 al 7</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 1 al 7</span>
+            <button onclick="openAddTaskModal('mensual', 'plan', 's1')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span>
+            </button>
+          </div>
         </div>
-        <div id="container-week-1" class="space-y-3">
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w1-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Interior de heladera y freezer</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Revisar alimentos vencidos, lavar estantes y cajones de verduras con agua tibia y producto apto.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w1-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Horno, microondas y filtros de campana</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Desengrasar bandeja de horno, plato de microondas y sumergir filtros metálicos de campana en agua caliente.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w1-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Alacenas, bajo mesada y despensa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Vaciar y limpiar estantes interiores de alacenas, descartar paquetes viejos y ordenar especieros.</span>
-            </div>
-          </label>
-        </div>
+        <div id="container-mensual-plan-s1" class="space-y-3 task-drop-target"></div>
       </section>
 
       <!-- Semana 2 del Mes -->
@@ -725,31 +689,14 @@
             <span class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-extrabold text-xs">S2</span>
             <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 2: Ventanas, Vidrios, Rieles y Persianas</h3>
           </div>
-          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 8 al 14</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 8 al 14</span>
+            <button onclick="openAddTaskModal('mensual', 'plan', 's2')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span>
+            </button>
+          </div>
         </div>
-        <div id="container-week-2" class="space-y-3">
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w2-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Vidrios y aberturas de toda la casa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar vidrios por ambos lados accesibles, marcos de aluminio y cristales del balcón.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w2-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Rieles de ventanas y persianas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Aspirar rieles y polvo acumulado en ranuras y pasar trapo húmedo por tablillas de persianas.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w2-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Tratamiento antical de mamparas y espejos</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Aplicar producto desincrustante en mamparas de baño y limpiar espejos grandes.</span>
-            </div>
-          </label>
-        </div>
+        <div id="container-mensual-plan-s2" class="space-y-3 task-drop-target"></div>
       </section>
 
       <!-- Semana 3 del Mes -->
@@ -759,31 +706,14 @@
             <span class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-extrabold text-xs">S3</span>
             <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 3: Dormitorios, Textiles y Tapizados</h3>
           </div>
-          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 15 al 21</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 15 al 21</span>
+            <button onclick="openAddTaskModal('mensual', 'plan', 's3')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span>
+            </button>
+          </div>
         </div>
-        <div id="container-week-3" class="space-y-3">
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w3-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Acolchados gruesos, fundas de sillón o cortinas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavado especial de piezas grandes. Recordar poner a secar y colgar la ropa <u>al revés</u>.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w3-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Rotar colchones y aspirado profundo bajo camas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Girar o rotar colchones y aspirar minuciosamente la estructura y piso debajo.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w3-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Interior de placares y cajones</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Repasar estantes superiores y piso interior de placares con paño humedecido.</span>
-            </div>
-          </label>
-        </div>
+        <div id="container-mensual-plan-s3" class="space-y-3 task-drop-target"></div>
       </section>
 
       <!-- Semana 4 del Mes -->
@@ -793,31 +723,14 @@
             <span class="w-7 h-7 rounded-full bg-teal-100 text-teal-800 flex items-center justify-center font-extrabold text-xs">S4</span>
             <h3 class="text-base sm:text-lg font-bold text-slate-800">Semana 4: Baños Profundo, Zócalos y Filtros</h3>
           </div>
-          <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 22 a fin de mes</span>
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">Días 22 a fin de mes</span>
+            <button onclick="openAddTaskModal('mensual', 'plan', 's4')" class="text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 font-bold px-2.5 py-1 rounded-lg transition-all flex items-center gap-1">
+              <span>➕</span>
+            </button>
+          </div>
         </div>
-        <div id="container-week-4" class="space-y-3">
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w4-t1" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Juntas de azulejos y desinfección total de baños</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Cepillar juntas con producto desincrustante, limpiar detrás de inodoros y rejillas de desagüe.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w4-t2" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Zócalos, puertas, marcos y manijas de la casa</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Limpiar con paño húmedo desinfectante todos los zócalos y puertas de cada ambiente.</span>
-            </div>
-          </label>
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400">
-            <input type="checkbox" id="m-w4-t3" onchange="toggleTask(this)" class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">Filtros de aire acondicionado y lavarropas</span>
-              <span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">Lavar filtros de los splits de aire acondicionado y vaciar el filtro inferior de pelusas del lavarropas.</span>
-            </div>
-          </label>
-        </div>
+        <div id="container-mensual-plan-s4" class="space-y-3 task-drop-target"></div>
       </section>
 
       <!-- Notas Generales del Mes -->
@@ -828,15 +741,18 @@
     </div>
 
     <!-- Botones de Acción Inferiores -->
-    <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
-      <button onclick="promptResetModal('weekly')" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-medium text-xs sm:text-sm rounded-xl shadow-sm transition-all">
-        Reiniciar Semana (Lunes a Viernes)
+    <div class="mt-8 flex flex-wrap items-center justify-center gap-3 no-print">
+      <button onclick="promptResetModal('weekly')" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-800 text-white font-medium text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+        <span>🔄</span>
+        <span>Desmarcar Semana (L-X-V)</span>
       </button>
-      <button onclick="promptResetModal('monthly')" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all">
-        Reiniciar Tareas del Mes
+      <button onclick="promptResetModal('monthly')" class="px-5 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+        <span>📅</span>
+        <span>Desmarcar Tareas del Mes</span>
       </button>
-      <button onclick="promptResetOrderModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all">
-        Restablecer Orden Inicial
+      <button onclick="promptResetOrderModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl shadow-sm transition-all flex items-center gap-1.5">
+        <span>↕️</span>
+        <span>Restablecer Orden Inicial</span>
       </button>
     </div>
 
@@ -845,10 +761,10 @@
       <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
         <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">⚠️</div>
         <h3 id="reset-modal-title" class="text-lg font-bold text-slate-900 mb-2">¿Confirmar reinicio?</h3>
-        <p id="reset-modal-desc" class="text-xs sm:text-sm text-slate-600 mb-6">Esta acción desmarcará las tareas seleccionadas.</p>
+        <p id="reset-modal-desc" class="text-xs sm:text-sm text-slate-600 mb-6">Esta acción desmarcará los casilleros de las tareas seleccionadas.</p>
         <div class="flex gap-3 justify-center">
-          <button onclick="closeResetModal()" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-          <button onclick="confirmResetAction()" class="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-rose-700 shadow">Sí, reiniciar</button>
+          <button onclick="closeModal('reset-modal')" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button onclick="confirmResetAction()" class="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-rose-700 shadow">Sí, desmarcar</button>
         </div>
       </div>
     </div>
@@ -858,52 +774,84 @@
       <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
         <div class="w-12 h-12 bg-teal-100 text-teal-700 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">↕️</div>
         <h3 class="text-lg font-bold text-slate-900 mb-2">¿Restablecer el orden?</h3>
-        <p class="text-xs sm:text-sm text-slate-600 mb-6">Todas las tareas volverán a su orden cronológico original.</p>
+        <p class="text-xs sm:text-sm text-slate-600 mb-6">Todas las tareas volverán al orden estándar por horario.</p>
         <div class="flex gap-3 justify-center">
-          <button onclick="closeResetOrderModal()" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button onclick="closeModal('reset-order-modal')" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
           <button onclick="confirmResetOrder()" class="flex-1 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-teal-800 shadow">Restablecer</button>
         </div>
       </div>
     </div>
 
-    <!-- MODAL 3: Agregar Tarea Mensual Personalizada -->
-    <div id="add-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
-      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left">
+    <!-- MODAL 3: Restaurar Tareas Predeterminadas -->
+    <div id="restore-defaults-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+        <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">🔄</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-2">¿Restaurar tareas sugeridas?</h3>
+        <p class="text-xs sm:text-sm text-slate-600 mb-6">Se restablecerá la lista completa de tareas recomendadas de fábrica. Tus notas se conservarán.</p>
+        <div class="flex gap-3 justify-center">
+          <button onclick="closeModal('restore-defaults-modal')" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button onclick="confirmRestoreDefaults()" class="flex-1 px-4 py-2.5 bg-amber-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-amber-700 shadow">Sí, restaurar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: Agregar o Editar Tarea (Universal) -->
+    <div id="task-editor-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 text-left">
         <div class="flex justify-between items-center mb-4">
-          <h3 class="text-lg font-bold text-slate-900">Agregar Tarea Mensual</h3>
-          <button onclick="closeAddTaskModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+          <h3 id="task-editor-title" class="text-lg font-bold text-slate-900">Editar Tarea</h3>
+          <button onclick="closeModal('task-editor-modal')" class="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">&times;</button>
         </div>
         
-        <form onsubmit="handleAddTaskSubmit(event)" class="space-y-4">
+        <form onsubmit="handleTaskEditorSubmit(event)" class="space-y-4">
+          <input type="hidden" id="edit-task-id">
+          <input type="hidden" id="edit-task-container">
+
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Semana asignada:</label>
-            <select id="new-task-week" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm font-semibold outline-none focus:ring-2 focus:ring-teal-500">
-              <option value="1">Semana 1 (Días 1 al 7 - Cocina)</option>
-              <option value="2">Semana 2 (Días 8 al 14 - Vidrios/Aberturas)</option>
-              <option value="3">Semana 3 (Días 15 al 21 - Textiles/Tapizados)</option>
-              <option value="4">Semana 4 (Días 22 a fin de mes - Baños/Zócalos)</option>
-            </select>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Título de la Tarea:</label>
+            <input type="text" id="edit-task-title-input" required placeholder="Ej: Limpiar mesada y repasar estantes" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-teal-500">
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Título de la tarea:</label>
-            <input type="text" id="new-task-title" required placeholder="Ej: Limpiar lámparas o pulir cubiertos" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Descripción o Instrucciones Específicas:</label>
+            <textarea id="edit-task-desc-input" rows="3" placeholder="Ej: Recordar pasar trapo con vinagre blanco en juntas..." class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500"></textarea>
           </div>
 
           <div>
-            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Detalle o instrucción adicional:</label>
-            <input type="text" id="new-task-desc" placeholder="Ej: Usar paño especial o producto antical" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Etiqueta de Horario / Horas (Opcional):</label>
+            <input type="text" id="edit-task-tag-input" placeholder="Ej: 09:00 - 10:00 o 30m" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-teal-500">
           </div>
 
           <div class="pt-3 flex gap-3">
-            <button type="button" onclick="closeAddTaskModal()" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
-            <button type="submit" class="flex-1 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-teal-800 shadow">Guardar Tarea</button>
+            <button type="button" onclick="closeModal('task-editor-modal')" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+            <button type="submit" class="flex-1 px-4 py-2.5 bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-teal-800 shadow">Guardar Cambios</button>
           </div>
         </form>
       </div>
     </div>
 
-    <!-- MODAL 4: Mover Tarea a Cualquier Horario / Bloque -->
+    <!-- MODAL 5: Editar Reglas Clave Generales -->
+    <div id="rules-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 text-left">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-xl">⚠️</span>
+            <h3 class="text-lg font-bold text-slate-900">Editar Reglas Clave del Hogar</h3>
+          </div>
+          <button onclick="closeModal('rules-modal')" class="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">&times;</button>
+        </div>
+        <p class="text-xs text-slate-500 mb-3">Modifica las instrucciones prioritarias que se exhiben en el banner superior:</p>
+        
+        <textarea id="rules-input" rows="4" class="w-full p-3 border border-slate-300 rounded-xl text-sm outline-none focus:ring-2 focus:ring-amber-500 font-medium"></textarea>
+
+        <div class="pt-3 flex gap-3">
+          <button type="button" onclick="closeModal('rules-modal')" class="flex-1 px-4 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button type="button" onclick="saveRulesText()" class="flex-1 px-4 py-2 bg-amber-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-amber-700 shadow">Guardar Reglas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 6: Mover Tarea a Cualquier Horario / Bloque -->
     <div id="move-block-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
       <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left">
         <div class="flex justify-between items-center mb-3">
@@ -911,16 +859,64 @@
             <span class="text-xl">⇄</span>
             <h3 class="text-lg font-bold text-slate-900">Mover a otro horario</h3>
           </div>
-          <button onclick="closeMoveBlockModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+          <button onclick="closeModal('move-block-modal')" class="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">&times;</button>
         </div>
-        <p class="text-xs text-slate-500 mb-4">Selecciona el bloque horario al que deseas transferir esta tarea:</p>
+        <p class="text-xs text-slate-500 mb-4">Selecciona el bloque horario de destino:</p>
         
-        <div id="move-block-options" class="space-y-2 max-h-72 overflow-y-auto pr-1">
-          <!-- Opciones dinámicas cargadas por JavaScript -->
-        </div>
+        <div id="move-block-options" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
 
         <div class="pt-4 flex justify-end">
-          <button type="button" onclick="closeMoveBlockModal()" class="px-4 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cerrar</button>
+          <button type="button" onclick="closeModal('move-block-modal')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 7: Eliminar Tarea -->
+    <div id="delete-task-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 text-center">
+        <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 text-xl font-bold">🗑️</div>
+        <h3 class="text-lg font-bold text-slate-900 mb-2">¿Eliminar esta tarea?</h3>
+        <p id="delete-task-name" class="text-xs sm:text-sm text-slate-600 mb-6 font-semibold"></p>
+        <div class="flex gap-3 justify-center">
+          <button onclick="closeModal('delete-task-modal')" class="flex-1 px-4 py-2.5 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+          <button onclick="confirmDeleteTask()" class="flex-1 px-4 py-2.5 bg-rose-600 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-rose-700 shadow">Sí, eliminar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 8: Asignar Tarea Mensual a un Día / Fecha Particular -->
+    <div id="assign-date-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 text-left">
+        <div class="flex justify-between items-center mb-3">
+          <div class="flex items-center gap-2">
+            <span class="text-2xl">📅</span>
+            <h3 class="text-lg font-bold text-slate-900">Asignar a un Día con Fecha</h3>
+          </div>
+          <button onclick="closeModal('assign-date-modal')" class="text-slate-400 hover:text-slate-600 text-xl font-bold leading-none">&times;</button>
+        </div>
+        
+        <p id="assign-modal-task-title" class="text-xs sm:text-sm font-semibold text-teal-800 bg-teal-50 p-2.5 rounded-xl border border-teal-100 mb-4"></p>
+        
+        <div class="space-y-3">
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Opciones rápidas para esta semana:</label>
+          <div id="assign-quick-options" class="grid grid-cols-1 gap-2">
+            <!-- Botones dinámicos para Lunes, Miércoles y Viernes de la semana activa -->
+          </div>
+
+          <div class="pt-2">
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">O elige cualquier fecha del calendario:</label>
+            <input type="date" id="assign-custom-date-input" class="w-full p-2.5 border border-slate-300 rounded-xl text-sm font-medium outline-none focus:ring-2 focus:ring-teal-500">
+          </div>
+        </div>
+
+        <div class="mt-6 pt-3 border-t border-slate-100 flex gap-2 justify-between">
+          <button type="button" onclick="confirmUnassignMonthlyTask()" class="px-3.5 py-2 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-bold transition-colors">
+            Desvincular fecha
+          </button>
+          <div class="flex gap-2">
+            <button type="button" onclick="closeModal('assign-date-modal')" class="px-4 py-2 border border-slate-300 rounded-xl text-xs sm:text-sm font-semibold text-slate-700 hover:bg-slate-50">Cancelar</button>
+            <button type="button" onclick="confirmCustomDateAssignment()" class="px-4 py-2 bg-teal-700 text-white rounded-xl text-xs sm:text-sm font-bold hover:bg-teal-800 shadow">Guardar Fecha</button>
+          </div>
         </div>
       </div>
     </div>
@@ -928,7 +924,7 @@
   </main>
 
   <script>
-    // 1. Configuración de Firebase
+    // 1. Configuración de Firebase y Constantes
     const firebaseConfig = {
       apiKey: "AIzaSyDIvzpmlcC4XMvWj9_U8nRr0SCt-I4bcjA",
       authDomain: "vero-b04ee.firebaseapp.com",
@@ -944,23 +940,158 @@
       'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
     ];
 
+    const DEFAULT_BANNER_RULES = "Tender y colgar la ropa siempre al revés. En la plancha (máx 1h diaria), lo primordial es que los cuellos queden impecables y firmes. No olvidar limpiar siempre debajo del televisor y repasar los estantes de la cocina.";
+
+    // Estructura de tareas estándar
+    const DEFAULT_TASKS = [
+      // --- LUNES FULL ---
+      { id: 'l-f-1', container: 'container-lunes-full-b1', title: 'Revisar lavaplatos, estantes y despejar cocina', desc: 'Guardar vajilla limpia o encender ciclo si quedó vajilla sucia. Despejar mesada, repasar los estantes de la cocina y pileta.', tag: '' },
+      { id: 'l-f-2', container: 'container-lunes-full-b1', title: 'Lavarropas (1.ª tanda): prendas claras o ropa de cama', desc: 'Separar y poner a andar. Recordatorio: poner siempre a secar y colgar la ropa al revés.', tag: '' },
+      { id: 'l-f-3', container: 'container-lunes-full-b1', title: 'Comederos, bebederos y ventilación inicial', desc: 'Lavar recipientes de Isabella y Chaska con agua fresca, abrir ventanas para ventilar toda la casa.', tag: '' },
+      { id: 'l-f-4', container: 'container-lunes-full-b1', title: 'Pasear a Isabella y Chaska', desc: 'Sacarlas al parque con tiempo adecuado (1 hora), hidratarlas al regresar y limpiar patitas.', tag: '09:00 - 10:00' },
+
+      { id: 'l-f-5', container: 'container-lunes-full-b2', title: 'Desinfección completa de baños', desc: 'Lavar y desinfectar inodoro, bidet, lavatorio, grifería, repasar mampara, reponer jabón y papel.', tag: '' },
+      { id: 'l-f-6', container: 'container-lunes-full-b2', title: 'Dormitorios: camas, mesas de noche y orden', desc: 'Tender camas con prolijidad, sacudir almohadas, retirar polvo de mesas de noche y guardar ropa fuera de lugar.', tag: '' },
+      { id: 'l-f-7', container: 'container-lunes-full-b2', title: 'Computadora, escritorio y sillón', desc: 'Limpiar con paño suave pantalla y teclado de computadora, aspirar y acomodar almohadones del sillón.', tag: '' },
+      { id: 'l-f-8', container: 'container-lunes-full-b2', title: 'Sala principal y mueble de TV', desc: 'Limpiar repisas, mesas bajas y SIEMPRE limpiar debajo del mueble del televisor.', tag: '' },
+
+      { id: 'l-f-9', container: 'container-lunes-full-b3', title: 'Planchado de ropa (Máx 1h) - Cuellos impecables', desc: 'Planchar camisas, pantalones y remeras. REGLA FUNDAMENTAL: Los cuellos deben quedar impecables, alineados y bien firmes.', tag: 'Máx 1 hora' },
+
+      { id: 'l-f-10', container: 'container-lunes-full-b4', title: 'Pausa de almuerzo & descanso', desc: 'Almuerzo personal, refrigerio e hidratación. Dejar el espacio de comida limpio y ordenado.', tag: '30 min' },
+
+      { id: 'l-f-11', container: 'container-lunes-full-b5', title: 'Avanzar con la tarea profunda del Plan Mensual', desc: 'Realizar la tarea asignada según la semana del mes (S1: cocina; S2: vidrios; S3: textiles; S4: azulejos/zócalos).', tag: 'Plan Mensual' },
+      { id: 'l-f-12', container: 'container-lunes-full-b5', title: 'Tender 2.ª tanda y guardar ropa seca doblada', desc: 'Colgar la segunda tanda siempre al revés. Descolgar prendas secas, doblarlas y guardarlas en sus placares.', tag: '' },
+
+      { id: 'l-f-13', container: 'container-lunes-full-b6', title: 'Aspirar o barrer todos los ambientes de la casa', desc: 'Cocina, living, pasillos, dormitorios, debajo de camas y rincones accesibles.', tag: '' },
+      { id: 'l-f-14', container: 'container-lunes-full-b6', title: 'Trapear y desinfectar pisos con aroma agradable', desc: 'Trapear desde el fondo hacia la salida. Enjuagar bien el trapo entre ambientes.', tag: '' },
+      { id: 'l-f-15', container: 'container-lunes-full-b6', title: 'Vaciar todos los tachos de basura y reponer bolsas', desc: 'Tachos de cocina, baños y dormitorios. Sacar la bolsa al contenedor exterior y dejar paños limpios.', tag: '' },
+
+      // --- LUNES AFTERNOON ---
+      { id: 'l-a-1', container: 'container-lunes-afternoon-b1', title: 'Lavaplatos, estantes y primera tanda de lavarropas', desc: 'Despejar cocina, repasar estantes y poner lavarropas. Recordar: colgar la ropa al revés.', tag: '' },
+      { id: 'l-a-2', container: 'container-lunes-afternoon-b1', title: 'Pasear a Isabella y Chaska (1 hora de tarde)', desc: 'Sacarlas al parque en horario de tarde, refrescar agua y darles comida.', tag: '1 hora' },
+      { id: 'l-a-3', container: 'container-lunes-afternoon-b1', title: 'Planchado intensivo (Máx 1h) - Cuellos impecables', desc: 'Máximo 1 hora. Asegurar que los cuellos queden perfectamente planchados y firmes.', tag: 'Máx 1h' },
+      { id: 'l-a-4', container: 'container-lunes-afternoon-b1', title: 'Repaso de baños, computadora, sillón y debajo de TV', desc: 'Desinfectar inodoros/lavatorios y limpiar el área de computación y debajo del mueble de TV.', tag: '' },
+      { id: 'l-a-5', container: 'container-lunes-afternoon-b1', title: 'Barrer, trapear pisos principales y sacar basura', desc: 'Pasar mopa con perfume en pisos y retirar residuos de la casa.', tag: '' },
+
+      // --- MIÉRCOLES FULL ---
+      { id: 'm-f-1', container: 'container-miercoles-full-b1', title: 'Revisar lavaplatos, estantes y ordenar mesada', desc: 'Descargar vajilla limpia, limpiar pileta a fondo y repasar los estantes de la cocina.', tag: '' },
+      { id: 'm-f-2', container: 'container-miercoles-full-b1', title: 'Lavarropas (1.ª tanda): toallas o ropa oscura', desc: 'Poner a andar tanda intermedia. Recordatorio: colgar la ropa al revés.', tag: '' },
+      { id: 'm-f-3', container: 'container-miercoles-full-b1', title: 'Comederos de perras y ventilación de ambientes', desc: 'Lavar fuentes con agua y jabón, reponer agua fresca y ventilar dormitorios.', tag: '' },
+      { id: 'm-f-4', container: 'container-miercoles-full-b1', title: 'Pasear a Isabella y Chaska', desc: 'Paseo de 1 hora al parque, juego, hidratación y limpieza de patitas al volver.', tag: '09:00 - 10:00' },
+
+      { id: 'm-f-5', container: 'container-miercoles-full-b2', title: 'Limpieza profunda de baños, mamparas y griferías', desc: 'Desincrustar mamparas, sanitizar inodoros, secar griferías a brillo y vaciar tachitos.', tag: '' },
+      { id: 'm-f-6', container: 'container-miercoles-full-b2', title: 'Dormitorios: sacudir sábanas, almohadas y orden', desc: 'Tender prolijo, limpiar mesas de noche y despejar percheros.', tag: '' },
+      { id: 'm-f-7', container: 'container-miercoles-full-b2', title: 'Computadora, escritorio y sillón', desc: 'Limpiar teclados, monitor, aspirar ranuras del sillón y ahuecar almohadones.', tag: '' },
+      { id: 'm-f-8', container: 'container-miercoles-full-b2', title: 'Sala principal y mueble de TV', desc: 'Retirar polvo de estantes, objetos decorativos y limpiar SIEMPRE debajo del mueble de TV.', tag: '' },
+
+      { id: 'm-f-9', container: 'container-miercoles-full-b3', title: 'Planchado de ropa (Máx 1h) - Cuellos impecables', desc: 'Máximo 1 hora de plancha. REGLA CLAVE: Que los cuellos queden perfectamente estirados y firmes.', tag: 'Máx 1 hora' },
+
+      { id: 'm-f-10', container: 'container-miercoles-full-b4', title: 'Pausa de almuerzo & descanso', desc: 'Comida personal y descanso. Dejar limpia y despejada la mesa y vajilla usada.', tag: '30 min' },
+
+      { id: 'm-f-11', container: 'container-miercoles-full-b5', title: 'Avanzar con la tarea profunda del Plan Mensual', desc: 'Completar la tarea rotativa del mes (horno/heladera, vidrios/persianas, textiles o azulejos).', tag: 'Plan Mensual' },
+      { id: 'm-f-12', container: 'container-miercoles-full-b5', title: 'Tender y doblar ropa seca', desc: 'Tender la colada siempre al revés. Recoger ropa seca, doblar y ordenar placares.', tag: '' },
+
+      { id: 'm-f-13', container: 'container-miercoles-full-b6', title: 'Barrer o aspirar todos los ambientes', desc: 'Pasar aspiradora en pisos, esquinas, zócalos y debajo de mesas y camas.', tag: '' },
+      { id: 'm-f-14', container: 'container-miercoles-full-b6', title: 'Trapear con aromatizante y desinfectante', desc: 'Pisos limpios, brillantes y perfumados en toda la casa.', tag: '' },
+      { id: 'm-f-15', container: 'container-miercoles-full-b6', title: 'Vaciar tachos de basura y reponer bolsas limpias', desc: 'Sacar residuos de baños, cocina y dormitorios al contenedor.', tag: '' },
+
+      // --- MIÉRCOLES AFTERNOON ---
+      { id: 'm-a-1', container: 'container-miercoles-afternoon-b1', title: 'Lavaplatos, estantes y primera tanda de lavarropas', desc: 'Despejar cocina, repasar estantes y lavarropas (colgar al revés).', tag: '' },
+      { id: 'm-a-2', container: 'container-miercoles-afternoon-b1', title: 'Pasear a Isabella y Chaska (1 hora de tarde)', desc: 'Paseo vespertino al parque, refrescar bebederos y caricias.', tag: '1 hora' },
+      { id: 'm-a-3', container: 'container-miercoles-afternoon-b1', title: 'Planchado intensivo (Máx 1h) - Cuellos impecables', desc: 'Máximo 1 hora. Asegurar que los cuellos queden firmes, derechos y sin arrugas.', tag: 'Máx 1h' },
+      { id: 'm-a-4', container: 'container-miercoles-afternoon-b1', title: 'Baños, computadora, sillón y mueble de TV', desc: 'Sanitizar inodoros/lavatorios, sacudir sillón y limpiar debajo del mueble de TV.', tag: '' },
+      { id: 'm-a-5', container: 'container-miercoles-afternoon-b1', title: 'Barrer, trapear con aroma y sacar residuos', desc: 'Trapear áreas principales y sacar la basura.', tag: '' },
+
+      // --- VIERNES FULL ---
+      { id: 'v-f-1', container: 'container-viernes-full-b1', title: 'Revisar lavaplatos, estantes y cambio de sábanas/toallas', desc: 'Guardar vajilla limpia, repasar estantes de cocina y retirar sábanas usadas para lavar.', tag: '' },
+      { id: 'v-f-2', container: 'container-viernes-full-b1', title: 'Lavarropas (1.ª tanda): juego de sábanas completo', desc: 'Encender ciclo de sábanas. Recordatorio: colgar la ropa al revés.', tag: '' },
+      { id: 'v-f-3', container: 'container-viernes-full-b1', title: 'Comederos de perras e higienización del sector', desc: 'Lavar y secar comederos y bebederos de Isabella y Chaska, repasar piso del rincón.', tag: '' },
+      { id: 'v-f-4', container: 'container-viernes-full-b1', title: 'Pasear a Isabella y Chaska', desc: 'Paseo de 1 hora al parque con calma para cerrar la semana con ejercicio.', tag: '09:00 - 10:00' },
+
+      { id: 'v-f-5', container: 'container-viernes-full-b2', title: 'Desinfección integral y reposición de baños', desc: 'Inodoro, bidet, mampara, lavatorio, toallas limpias colocadas y reposición para el fin de semana.', tag: '' },
+      { id: 'v-f-6', container: 'container-viernes-full-b2', title: 'Colocar sábanas limpias y orden de dormitorios', desc: 'Hacer las camas con sábanas frescas bien estiradas y dejar dormitorios impecables.', tag: '' },
+      { id: 'v-f-7', container: 'container-viernes-full-b2', title: 'Computadora, escritorio y sillón', desc: 'Limpiar teclados, monitor, aspirar pelusas del sillón y ordenar almohadones.', tag: '' },
+      { id: 'v-f-8', container: 'container-viernes-full-b2', title: 'Living principal y mueble de TV', desc: 'Limpieza general de superficies y limpiar rigurosamente debajo del mueble de TV.', tag: '' },
+
+      { id: 'v-f-9', container: 'container-viernes-full-b3', title: 'Planchado de ropa (Máx 1h) - Cuellos impecables', desc: 'Plancha final semanal (máx 1h). REGLA FUNDAMENTAL: Los cuellos deben quedar impecables, lisos y firmes.', tag: 'Máx 1 hora' },
+
+      { id: 'v-f-10', container: 'container-viernes-full-b4', title: 'Pausa de almuerzo & descanso', desc: 'Almuerzo personal y descanso. Dejar la cocina limpia y recogida.', tag: '30 min' },
+
+      { id: 'v-f-11', container: 'container-viernes-full-b5', title: 'Avanzar con la tarea profunda del Plan Mensual', desc: 'Completar o cerrar la tarea semanal del Plan Mensual correspondiente al mes en curso.', tag: 'Plan Mensual' },
+      { id: 'v-f-12', container: 'container-viernes-full-b5', title: 'Tender 2.ª tanda y guardar toda la ropa de la semana', desc: 'Colgar siempre al revés. Doblar y guardar toda la ropa limpia en los armarios.', tag: '' },
+
+      { id: 'v-f-13', container: 'container-viernes-full-b6', title: 'Aspirado minucioso de toda la casa', desc: 'Pisos, alfombras, debajo de camas, zócalos y rincones de cada ambiente.', tag: '' },
+      { id: 'v-f-14', container: 'container-viernes-full-b6', title: 'Trapeado profundo y perfumado de pisos', desc: 'Doble pasada de trapo con aromatizante para dejar la casa lista para el fin de semana.', tag: '' },
+      { id: 'v-f-15', container: 'container-viernes-full-b6', title: 'Vaciar todos los tachos de basura y reponer bolsas', desc: 'Bolsas limpias en todos los tachos, sacar residuos al contenedor y dejar paños limpios.', tag: '' },
+
+      // --- VIERNES AFTERNOON ---
+      { id: 'v-a-1', container: 'container-viernes-afternoon-b1', title: 'Lavaplatos, cambio de sábanas/toallas y lavarropas', desc: 'Despejar cocina, repasar estantes, cambiar sábanas y poner lavarropas (colgar al revés).', tag: '' },
+      { id: 'v-a-2', container: 'container-viernes-afternoon-b1', title: 'Pasear a Isabella y Chaska (1 hora de tarde)', desc: 'Paseo de parque de fin de semana, agua fresca y limpiar patitas.', tag: '1 hora' },
+      { id: 'v-a-3', container: 'container-viernes-afternoon-b1', title: 'Planchado intensivo (Máx 1h) - Cuellos impecables', desc: 'Máximo 1 hora. Ropa del fin de semana con cuellos firmes, derechos y sin arrugas.', tag: 'Máx 1h' },
+      { id: 'v-a-4', container: 'container-viernes-afternoon-b1', title: 'Baños a fondo, computadora, sillón y mueble de TV', desc: 'Desinfección de inodoros/lavatorios, sacudir sillón y limpiar debajo del mueble de TV.', tag: '' },
+      { id: 'v-a-5', container: 'container-viernes-afternoon-b1', title: 'Aspirar/barrer, trapeado perfumado y vaciar basuras', desc: 'Dejar la casa impecable de cara al fin de semana y retirar residuos.', tag: '' },
+
+      // --- PLAN MENSUAL ---
+      { id: 'm-s1-1', container: 'container-mensual-plan-s1', title: 'Interior de heladera y freezer', desc: 'Revisar alimentos vencidos, lavar estantes y cajones de verduras con agua tibia y producto apto.', tag: 'S1' },
+      { id: 'm-s1-2', container: 'container-mensual-plan-s1', title: 'Horno, microondas y filtros de campana', desc: 'Desengrasar bandeja de horno, plato de microondas y sumergir filtros metálicos de campana.', tag: 'S1' },
+      { id: 'm-s1-3', container: 'container-mensual-plan-s1', title: 'Alacenas, bajo mesada y despensa', desc: 'Vaciar y limpiar estantes interiores de alacenas, descartar paquetes viejos y ordenar especieros.', tag: 'S1' },
+
+      { id: 'm-s2-1', container: 'container-mensual-plan-s2', title: 'Vidrios y aberturas de toda la casa', desc: 'Limpiar vidrios por ambos lados accesibles, marcos de aluminio y cristales del balcón.', tag: 'S2' },
+      { id: 'm-s2-2', container: 'container-mensual-plan-s2', title: 'Rieles de ventanas y persianas', desc: 'Aspirar rieles y polvo acumulado en ranuras y pasar trapo húmedo por tablillas de persianas.', tag: 'S2' },
+      { id: 'm-s2-3', container: 'container-mensual-plan-s2', title: 'Tratamiento antical de mamparas y espejos', desc: 'Aplicar producto desincrustante en mamparas de baño y limpiar espejos grandes.', tag: 'S2' },
+
+      { id: 'm-s3-1', container: 'container-mensual-plan-s3', title: 'Acolchados gruesos, fundas de sillón o cortinas', desc: 'Lavado especial de piezas grandes. Recordar poner a secar y colgar la ropa al revés.', tag: 'S3' },
+      { id: 'm-s3-2', container: 'container-mensual-plan-s3', title: 'Rotar colchones y aspirado profundo bajo camas', desc: 'Girar o rotar colchones y aspirar minuciosamente la estructura y piso debajo.', tag: 'S3' },
+      { id: 'm-s3-3', container: 'container-mensual-plan-s3', title: 'Interior de placares y cajones', desc: 'Repasar estantes superiores y piso interior de placares con paño humedecido.', tag: 'S3' },
+
+      { id: 'm-s4-1', container: 'container-mensual-plan-s4', title: 'Juntas de azulejos y desinfección total de baños', desc: 'Cepillar juntas con producto desincrustante, limpiar detrás de inodoros y rejillas.', tag: 'S4' },
+      { id: 'm-s4-2', container: 'container-mensual-plan-s4', title: 'Zócalos, puertas, marcos y manijas de la casa', desc: 'Limpiar con paño húmedo desinfectante todos los zócalos y puertas de cada ambiente.', tag: 'S4' },
+      { id: 'm-s4-3', container: 'container-mensual-plan-s4', title: 'Filtros de aire acondicionado y lavarropas', desc: 'Lavar filtros de los splits de aire acondicionado y vaciar el filtro inferior de pelusas.', tag: 'S4' }
+    ];
+
     let db = null;
     let docRef = null;
     let resetTarget = 'weekly';
     let draggedItem = null;
-    
-    // Objeto central de datos
+    let movingTaskId = null;
+    let deletingTaskId = null;
+    let assigningMonthlyTaskId = null;
+
+    // Estado principal
     let localData = {
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      week: 1,
       shift: '08:00',
       mondayMode: 'full',
       wednesdayMode: 'full',
       fridayMode: 'full',
-      month: new Date().getMonth(),
-      tasks: {},
+      bannerRules: DEFAULT_BANNER_RULES,
+      allTasks: JSON.parse(JSON.stringify(DEFAULT_TASKS)),
+      completedTasks: {},
       notes: {},
-      customMonthlyTasks: [],
-      taskOrders: {}
+      taskOrders: {},
+      assignedMonthlyTasks: {}
     };
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function openModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.remove('hidden');
+    }
+
+    function closeModal(modalId) {
+      const el = document.getElementById(modalId);
+      if (el) el.classList.add('hidden');
+    }
 
     function updateStatus(state, msg) {
       const dot = document.getElementById('status-dot');
@@ -978,7 +1109,9 @@
         text.textContent = msg || 'Modo Local';
       }
     }
+  </script>
 
+  <script>
     async function initFirebase() {
       try {
         if (!firebase.apps.length) {
@@ -987,7 +1120,7 @@
         
         await firebase.auth().signInAnonymously();
         db = firebase.firestore();
-        docRef = db.collection('rutinas').doc('veronica_routine');
+        docRef = db.collection('rutinas').doc('veronica_routine_v2');
 
         docRef.onSnapshot((doc) => {
           if (doc.exists) {
@@ -1010,7 +1143,7 @@
 
     function syncState() {
       try {
-        localStorage.setItem('veronica_routine_data', JSON.stringify(localData));
+        localStorage.setItem('veronica_routine_v2_data', JSON.stringify(localData));
       } catch (e) {
         console.warn("Error guardando localStorage", e);
       }
@@ -1025,42 +1158,40 @@
 
     function applyDataToUI(data) {
       if (!data) return;
-      
+
       localData = {
         ...localData,
         ...data,
+        year: data.year || new Date().getFullYear(),
+        month: data.month !== undefined ? data.month : new Date().getMonth(),
+        week: data.week || 1,
         mondayMode: data.mondayMode || 'full',
         wednesdayMode: data.wednesdayMode || 'full',
         fridayMode: data.fridayMode || 'full',
-        tasks: data.tasks || {},
+        bannerRules: data.bannerRules || DEFAULT_BANNER_RULES,
+        allTasks: (Array.isArray(data.allTasks) && data.allTasks.length > 0) ? data.allTasks : JSON.parse(JSON.stringify(DEFAULT_TASKS)),
+        completedTasks: data.completedTasks || {},
         notes: data.notes || {},
-        customMonthlyTasks: data.customMonthlyTasks || [],
-        taskOrders: data.taskOrders || {}
+        taskOrders: data.taskOrders || {},
+        assignedMonthlyTasks: data.assignedMonthlyTasks || {}
       };
 
-      if (localData.shift) {
-        setScheduleShift(localData.shift, false);
-      }
+      const rulesEl = document.getElementById('banner-rules-text');
+      if (rulesEl) rulesEl.textContent = localData.bannerRules;
 
+      if (localData.shift) setScheduleShift(localData.shift, false);
       setDayMode('lunes', localData.mondayMode || 'full', false);
       setDayMode('miercoles', localData.wednesdayMode || 'full', false);
       setDayMode('viernes', localData.fridayMode || 'full', false);
 
-      const currentMonth = localData.month !== undefined ? localData.month : new Date().getMonth();
       const monthSelect = document.getElementById('select-month');
-      if (monthSelect) monthSelect.value = currentMonth;
-      updateMonthLabels(currentMonth);
+      if (monthSelect) monthSelect.value = localData.month;
+      
+      const weekSelect = document.getElementById('select-week');
+      if (weekSelect) weekSelect.value = localData.week;
 
-      renderCustomMonthlyTasks();
-
-      document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-        cb.checked = !!localData.tasks[cb.id];
-        const container = cb.closest('.task-item');
-        if (container) {
-          if (cb.checked) container.classList.add('completed');
-          else container.classList.remove('completed');
-        }
-      });
+      updateCalendarDates();
+      renderAllTasks();
 
       ['lunes', 'miercoles', 'viernes', 'mensual'].forEach(key => {
         const area = document.getElementById('notes-' + key);
@@ -1069,28 +1200,254 @@
         }
       });
 
-      // Aplicar orden guardado de tareas a lo largo de todos los contenedores
-      applyAllSavedOrders();
+      updateAllProgress();
+    }
+  </script>
+
+  <script>
+    function getWeekDates(year, month, weekNumber) {
+      const startDay = (weekNumber - 1) * 7 + 1;
+      const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+      const endDay = Math.min(weekNumber * 7, lastDayOfMonth);
+
+      const daysInfo = {
+        lunes: null,
+        miercoles: null,
+        viernes: null
+      };
+
+      for (let dayNum = startDay; dayNum <= endDay; dayNum++) {
+        const d = new Date(year, month, dayNum);
+        const dayOfWeek = d.getDay();
+        if (dayOfWeek === 1 && !daysInfo.lunes) daysInfo.lunes = d;
+        if (dayOfWeek === 3 && !daysInfo.miercoles) daysInfo.miercoles = d;
+        if (dayOfWeek === 5 && !daysInfo.viernes) daysInfo.viernes = d;
+      }
+
+      if (!daysInfo.lunes) daysInfo.lunes = new Date(year, month, Math.min(startDay, lastDayOfMonth));
+      if (!daysInfo.miercoles) daysInfo.miercoles = new Date(year, month, Math.min(startDay + 2, lastDayOfMonth));
+      if (!daysInfo.viernes) daysInfo.viernes = new Date(year, month, Math.min(startDay + 4, lastDayOfMonth));
+
+      return daysInfo;
+    }
+
+    function updateCalendarDates() {
+      const year = localData.year || new Date().getFullYear();
+      const month = localData.month !== undefined ? localData.month : new Date().getMonth();
+      const week = localData.week || 1;
+
+      const monthName = MONTH_NAMES[month];
+      const weekDates = getWeekDates(year, month, week);
+
+      const formatDateLong = (dateObj, dayName) => `${dayName} ${dateObj.getDate()} de ${MONTH_NAMES[dateObj.getMonth()]}`;
+      const formatDateShort = (dateObj) => `${dateObj.getDate()} ${MONTH_NAMES[dateObj.getMonth()].substring(0, 3)}`;
+      const toISO = (dateObj) => {
+        const y = dateObj.getFullYear();
+        const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const d = String(dateObj.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+
+      localData.currentWeekDates = {
+        lunes: { date: weekDates.lunes, iso: toISO(weekDates.lunes), full: formatDateLong(weekDates.lunes, 'Lunes') },
+        miercoles: { date: weekDates.miercoles, iso: toISO(weekDates.miercoles), full: formatDateLong(weekDates.miercoles, 'Miércoles') },
+        viernes: { date: weekDates.viernes, iso: toISO(weekDates.viernes), full: formatDateLong(weekDates.viernes, 'Viernes') }
+      };
+
+      const tabLunes = document.getElementById('tab-date-lunes');
+      const tabMiercoles = document.getElementById('tab-date-miercoles');
+      const tabViernes = document.getElementById('tab-date-viernes');
+      const tabMensual = document.getElementById('tab-date-mensual');
+
+      if (tabLunes) tabLunes.textContent = formatDateShort(weekDates.lunes);
+      if (tabMiercoles) tabMiercoles.textContent = formatDateShort(weekDates.miercoles);
+      if (tabViernes) tabViernes.textContent = formatDateShort(weekDates.viernes);
+      if (tabMensual) tabMensual.textContent = `${monthName} (S${week})`;
+
+      const bannerL = document.getElementById('banner-date-lunes');
+      const bannerM = document.getElementById('banner-date-miercoles');
+      const bannerV = document.getElementById('banner-date-viernes');
+
+      if (bannerL) bannerL.textContent = formatDateLong(weekDates.lunes, 'Lunes');
+      if (bannerM) bannerM.textContent = formatDateLong(weekDates.miercoles, 'Miércoles');
+      if (bannerV) bannerV.textContent = formatDateLong(weekDates.viernes, 'Viernes');
+
+      const currentMonthDisplay = document.getElementById('current-month-display');
+      const notesMonthTitle = document.getElementById('notes-month-title');
+      if (currentMonthDisplay) currentMonthDisplay.textContent = `${monthName} ${year}`;
+      if (notesMonthTitle) notesMonthTitle.textContent = `${monthName} ${year}`;
+
+      renderAssignedMonthlyTasksInDays();
+    }
+
+    function handleMonthChange() {
+      const monthSelect = document.getElementById('select-month');
+      if (monthSelect) localData.month = parseInt(monthSelect.value, 10);
+      updateCalendarDates();
+      renderAllTasks();
+      updateAllProgress();
+      syncState();
+    }
+
+    function handleWeekChange() {
+      const weekSelect = document.getElementById('select-week');
+      if (weekSelect) localData.week = parseInt(weekSelect.value, 10);
+      updateCalendarDates();
+      renderAllTasks();
+      updateAllProgress();
+      syncState();
+    }
+
+    function renderAssignedMonthlyTasksInDays() {
+      ['lunes', 'miercoles', 'viernes'].forEach(dayKey => {
+        const section = document.getElementById(`assigned-monthly-${dayKey}-section`);
+        const list = document.getElementById(`assigned-monthly-${dayKey}-list`);
+        if (!section || !list) return;
+
+        list.innerHTML = '';
+        const dayInfo = localData.currentWeekDates ? localData.currentWeekDates[dayKey] : null;
+
+        const assignedTasks = [];
+        if (localData.assignedMonthlyTasks) {
+          Object.keys(localData.assignedMonthlyTasks).forEach(taskId => {
+            const assignment = localData.assignedMonthlyTasks[taskId];
+            const task = localData.allTasks.find(t => t.id === taskId);
+            if (!task) return;
+
+            const matchesDayKey = assignment.dayKey === dayKey;
+            const matchesIso = dayInfo && assignment.dateString === dayInfo.iso;
+
+            if (matchesDayKey || matchesIso) {
+              assignedTasks.push({ task, assignment });
+            }
+          });
+        }
+
+        if (assignedTasks.length > 0) {
+          section.classList.remove('hidden');
+          assignedTasks.forEach(({ task, assignment }) => {
+            const isCompleted = !!localData.completedTasks[task.id];
+            const item = document.createElement('div');
+            item.className = `p-3 rounded-xl border flex items-start gap-3 bg-white shadow-xs ${isCompleted ? 'border-emerald-300 bg-emerald-50/50' : 'border-amber-200'}`;
+            item.innerHTML = `
+              <input type="checkbox" id="${task.id}" onchange="toggleTask(this)" ${isCompleted ? 'checked' : ''} class="mt-1 h-5 w-5 rounded border-amber-300 text-amber-600 focus:ring-amber-500">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold">Plan Mensual</span>
+                  <span class="font-bold text-slate-800 text-sm ${isCompleted ? 'line-through text-slate-500' : ''}">${escapeHtml(task.title)}</span>
+                </div>
+                ${task.desc ? `<p class="text-xs text-slate-600 mt-0.5">${escapeHtml(task.desc)}</p>` : ''}
+              </div>
+              <button type="button" onclick="openAssignDateModal('${task.id}')" title="Modificar fecha asignada" class="text-xs text-amber-700 hover:text-amber-950 px-2 py-1 bg-amber-100/70 hover:bg-amber-200 rounded-lg font-semibold flex items-center gap-1">
+                <span>📅</span>
+                <span>${escapeHtml(assignment.displayDate || 'Fecha')}</span>
+              </button>
+            `;
+            list.appendChild(item);
+          });
+        } else {
+          section.classList.add('hidden');
+        }
+      });
+    }
+  </script>
+
+  <script>
+    function renderAllTasks() {
+      const containers = document.querySelectorAll('.task-drop-target');
+      containers.forEach(container => {
+        container.innerHTML = '';
+        attachContainerDropEvents(container);
+      });
+
+      const tasksByContainer = {};
+      localData.allTasks.forEach(task => {
+        if (!tasksByContainer[task.container]) {
+          tasksByContainer[task.container] = [];
+        }
+        tasksByContainer[task.container].push(task);
+      });
+
+      Object.keys(tasksByContainer).forEach(containerId => {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+
+        let tasks = tasksByContainer[containerId];
+        const savedOrder = localData.taskOrders ? localData.taskOrders[containerId] : null;
+
+        if (savedOrder && Array.isArray(savedOrder)) {
+          const orderMap = new Map();
+          savedOrder.forEach((id, idx) => orderMap.set(id, idx));
+          tasks.sort((a, b) => {
+            const orderA = orderMap.has(a.id) ? orderMap.get(a.id) : 9999;
+            const orderB = orderMap.has(b.id) ? orderMap.get(b.id) : 9999;
+            return orderA - orderB;
+          });
+        }
+
+        tasks.forEach(task => {
+          appendTaskCard(task, container);
+        });
+      });
+
+      checkEmptyContainers();
+      renderAssignedMonthlyTasksInDays();
       updateAllProgress();
     }
 
-    let movingTaskId = null;
+    function appendTaskCard(task, container) {
+      const isCompleted = !!localData.completedTasks[task.id];
+      const isPlanchado = task.title.toLowerCase().includes('plancha');
+      const isMonthlyTask = task.container && task.container.startsWith('container-mensual');
+      const assignment = (localData.assignedMonthlyTasks && localData.assignedMonthlyTasks[task.id]) || null;
 
-    function setupReorderControls() {
-      let idx = 0;
-      document.querySelectorAll('.day-tab section .space-y-3, [id^="container-week-"], [id^="container-lunes-"], [id^="container-miercoles-"], [id^="container-viernes-"]').forEach(container => {
-        if (!container.id) {
-          container.id = 'task-container-' + (++idx);
-        }
-        
-        container.classList.add('task-drop-target');
-        attachContainerDropEvents(container);
+      const card = document.createElement('div');
+      card.className = 'task-card-container flex items-center gap-2 group';
+      card.setAttribute('draggable', 'true');
+      card.setAttribute('data-task-id', task.id);
 
-        container.querySelectorAll(':scope > label.task-item, :scope > div.custom-monthly-item').forEach(taskElement => {
-          wrapTaskWithReorderControls(taskElement, container);
-        });
-      });
-      checkEmptyContainers();
+      card.innerHTML = `
+        <div class="flex flex-col items-center justify-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity flex-shrink-0 select-none no-print">
+          <button type="button" onclick="moveTask(this, 'up')" title="Mover arriba" class="btn-action w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-slate-200 text-[10px] font-bold">
+            ▲
+          </button>
+          <button type="button" onclick="openMoveBlockModal('${task.id}')" title="Mover a cualquier horario" class="btn-action w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-teal-50 text-[11px] font-semibold">
+            ⇄
+          </button>
+          <button type="button" onclick="moveTask(this, 'down')" title="Mover abajo" class="btn-action w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-slate-200 text-[10px] font-bold">
+            ▼
+          </button>
+        </div>
+
+        <label class="task-item flex-1 flex items-start p-3.5 rounded-xl border ${isPlanchado ? 'border-amber-200 bg-amber-50/40 hover:border-amber-400' : 'border-slate-200 bg-white hover:border-teal-400'} cursor-pointer ${isCompleted ? 'completed' : ''}">
+          <input type="checkbox" id="${task.id}" onchange="toggleTask(this)" ${isCompleted ? 'checked' : ''} class="mt-1 h-5 w-5 rounded ${isPlanchado ? 'border-amber-300 text-amber-600 focus:ring-amber-500' : 'border-slate-300 text-teal-600 focus:ring-teal-500'}">
+          <div class="ml-3.5 flex-1 pr-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="task-title font-semibold text-slate-800 text-sm sm:text-base">${escapeHtml(task.title)}</span>
+              ${task.tag ? `<span class="text-xs px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 font-semibold border border-teal-200/60">${escapeHtml(task.tag)}</span>` : ''}
+              ${isMonthlyTask && assignment ? `<span class="text-[11px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-bold border border-amber-300/70">🗓️ ${escapeHtml(assignment.displayDate)}</span>` : ''}
+            </div>
+            ${task.desc ? `<span class="text-xs sm:text-sm text-slate-500 mt-1 block leading-relaxed">${escapeHtml(task.desc)}</span>` : ''}
+          </div>
+        </label>
+
+        <div class="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 no-print">
+          ${isMonthlyTask ? `
+            <button type="button" onclick="openAssignDateModal('${task.id}')" title="Asignar a un día o fecha específica" class="btn-action p-2 text-amber-600 hover:text-amber-800 hover:bg-amber-50 rounded-lg text-sm">
+              📅
+            </button>
+          ` : ''}
+          <button type="button" onclick="openEditTaskModal('${task.id}')" title="Editar tarea" class="btn-action p-2 text-slate-400 hover:text-teal-700 hover:bg-teal-50 rounded-lg text-sm">
+            ✏️
+          </button>
+          <button type="button" onclick="promptDeleteTaskModal('${task.id}')" title="Eliminar tarea" class="btn-action p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg text-sm">
+            🗑️
+          </button>
+        </div>
+      `;
+
+      container.appendChild(card);
+      attachDragEvents(card);
     }
 
     function checkEmptyContainers() {
@@ -1100,42 +1457,220 @@
         else c.classList.add('is-empty');
       });
     }
+  </script>
 
-    function wrapTaskWithReorderControls(el, container) {
-      if (el.parentElement && el.parentElement.classList.contains('task-card-container')) {
+  <script>
+    function openAddTaskModal(day, mode, block) {
+      document.getElementById('task-editor-title').textContent = 'Agregar Nueva Tarea';
+      document.getElementById('edit-task-id').value = '';
+      document.getElementById('edit-task-container').value = `container-${day}-${mode}-${block}`;
+      document.getElementById('edit-task-title-input').value = '';
+      document.getElementById('edit-task-desc-input').value = '';
+      document.getElementById('edit-task-tag-input').value = '';
+      openModal('task-editor-modal');
+      setTimeout(() => document.getElementById('edit-task-title-input').focus(), 50);
+    }
+
+    function openEditTaskModal(taskId) {
+      const task = localData.allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      document.getElementById('task-editor-title').textContent = 'Editar Tarea';
+      document.getElementById('edit-task-id').value = task.id;
+      document.getElementById('edit-task-container').value = task.container || '';
+      document.getElementById('edit-task-title-input').value = task.title || '';
+      document.getElementById('edit-task-desc-input').value = task.desc || '';
+      document.getElementById('edit-task-tag-input').value = task.tag || '';
+      openModal('task-editor-modal');
+      setTimeout(() => document.getElementById('edit-task-title-input').focus(), 50);
+    }
+
+    function handleTaskEditorSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('edit-task-id').value;
+      const container = document.getElementById('edit-task-container').value;
+      const title = document.getElementById('edit-task-title-input').value.trim();
+      const desc = document.getElementById('edit-task-desc-input').value.trim();
+      const tag = document.getElementById('edit-task-tag-input').value.trim();
+
+      if (!title) return;
+
+      if (id) {
+        const task = localData.allTasks.find(t => t.id === id);
+        if (task) {
+          task.title = title;
+          task.desc = desc;
+          task.tag = tag;
+        }
+      } else {
+        const newId = 'custom-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        const newTask = {
+          id: newId,
+          container: container,
+          title: title,
+          desc: desc,
+          tag: tag
+        };
+        localData.allTasks.push(newTask);
+        if (localData.taskOrders && localData.taskOrders[container]) {
+          localData.taskOrders[container].push(newId);
+        }
+      }
+
+      closeModal('task-editor-modal');
+      renderAllTasks();
+      syncState();
+    }
+
+    function promptDeleteTaskModal(taskId) {
+      deletingTaskId = taskId;
+      const task = localData.allTasks.find(t => t.id === taskId);
+      const nameEl = document.getElementById('delete-task-name');
+      if (nameEl) nameEl.textContent = task ? `"${task.title}"` : '';
+      openModal('delete-task-modal');
+    }
+
+    function confirmDeleteTask() {
+      if (!deletingTaskId) return;
+      localData.allTasks = localData.allTasks.filter(t => t.id !== deletingTaskId);
+      if (localData.completedTasks) delete localData.completedTasks[deletingTaskId];
+      if (localData.assignedMonthlyTasks) delete localData.assignedMonthlyTasks[deletingTaskId];
+      if (localData.taskOrders) {
+        Object.keys(localData.taskOrders).forEach(k => {
+          localData.taskOrders[k] = localData.taskOrders[k].filter(id => id !== deletingTaskId);
+        });
+      }
+      closeModal('delete-task-modal');
+      deletingTaskId = null;
+      renderAllTasks();
+      syncState();
+    }
+
+    function promptRestoreDefaultsModal() {
+      openModal('restore-defaults-modal');
+    }
+
+    function confirmRestoreDefaults() {
+      localData.allTasks = JSON.parse(JSON.stringify(DEFAULT_TASKS));
+      localData.taskOrders = {};
+      closeModal('restore-defaults-modal');
+      renderAllTasks();
+      syncState();
+    }
+
+    function openEditRulesModal() {
+      const input = document.getElementById('rules-input');
+      if (input) input.value = localData.bannerRules || DEFAULT_BANNER_RULES;
+      openModal('rules-modal');
+    }
+
+    function saveRulesText() {
+      const val = document.getElementById('rules-input').value.trim();
+      if (val) {
+        localData.bannerRules = val;
+        const rulesEl = document.getElementById('banner-rules-text');
+        if (rulesEl) rulesEl.textContent = val;
+      }
+      closeModal('rules-modal');
+      syncState();
+    }
+  </script>
+
+  <script>
+    function openAssignDateModal(taskId) {
+      assigningMonthlyTaskId = taskId;
+      const task = localData.allTasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const titleEl = document.getElementById('assign-modal-task-title');
+      if (titleEl) titleEl.textContent = `Tarea: "${task.title}"`;
+
+      const quickBox = document.getElementById('assign-quick-options');
+      quickBox.innerHTML = '';
+
+      const weekDates = localData.currentWeekDates || getWeekDates(localData.year, localData.month, localData.week);
+
+      [
+        { key: 'lunes', label: 'Lunes', info: weekDates.lunes },
+        { key: 'miercoles', label: 'Miércoles', info: weekDates.miercoles },
+        { key: 'viernes', label: 'Viernes', info: weekDates.viernes }
+      ].forEach(day => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'w-full text-left p-3 rounded-xl border border-slate-200 hover:border-teal-500 hover:bg-teal-50/60 transition-all flex items-center justify-between text-xs sm:text-sm font-semibold text-slate-800';
+        btn.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span>📅</span>
+            <span>${day.info.full}</span>
+          </div>
+          <span class="text-teal-700 font-bold">Asignar →</span>
+        `;
+        btn.onclick = () => {
+          assignMonthlyTaskToDay(taskId, day.key, day.info.iso, day.info.full);
+        };
+        quickBox.appendChild(btn);
+      });
+
+      const customInput = document.getElementById('assign-custom-date-input');
+      const existing = localData.assignedMonthlyTasks && localData.assignedMonthlyTasks[taskId];
+      if (customInput) {
+        customInput.value = existing ? existing.dateString : '';
+      }
+
+      openModal('assign-date-modal');
+    }
+
+    function assignMonthlyTaskToDay(taskId, dayKey, isoDate, displayDate) {
+      if (!localData.assignedMonthlyTasks) localData.assignedMonthlyTasks = {};
+      localData.assignedMonthlyTasks[taskId] = {
+        taskId: taskId,
+        dayKey: dayKey,
+        dateString: isoDate,
+        displayDate: displayDate
+      };
+
+      closeModal('assign-date-modal');
+      renderAllTasks();
+      syncState();
+    }
+
+    function confirmCustomDateAssignment() {
+      if (!assigningMonthlyTaskId) return;
+      const customInput = document.getElementById('assign-custom-date-input');
+      const val = customInput ? customInput.value : '';
+
+      if (!val) {
+        closeModal('assign-date-modal');
         return;
       }
 
-      const cb = el.querySelector('input[type="checkbox"]');
-      const taskId = cb ? cb.id : 'task-' + Math.random().toString(36).substr(2, 9);
+      const parts = val.split('-');
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      const dateObj = new Date(y, m, d);
 
-      const wrapper = document.createElement('div');
-      wrapper.className = 'task-card-container flex items-center gap-2 group';
-      wrapper.setAttribute('draggable', 'true');
-      wrapper.setAttribute('data-task-id', taskId);
+      const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+      const dayIndex = dateObj.getDay();
+      const dayKeyMap = { 1: 'lunes', 3: 'miercoles', 5: 'viernes' };
+      const dayKey = dayKeyMap[dayIndex] || 'otro';
+      const displayDate = `${dayNames[dayIndex]} ${d} de ${MONTH_NAMES[m]}`;
 
-      const btnCol = document.createElement('div');
-      btnCol.className = 'flex flex-col items-center justify-center gap-0.5 opacity-70 group-hover:opacity-100 transition-opacity flex-shrink-0 select-none';
-      btnCol.innerHTML = `
-        <button type="button" onclick="moveTask(this, 'up')" title="Mover hacia arriba" class="btn-reorder w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-slate-200 text-[10px] font-bold transition-all">
-          ▲
-        </button>
-        <button type="button" onclick="openMoveBlockModal('${taskId}')" title="Mover a cualquier horario" class="btn-reorder w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-teal-50 text-[11px] font-semibold transition-all">
-          ⇄
-        </button>
-        <button type="button" onclick="moveTask(this, 'down')" title="Mover hacia abajo" class="btn-reorder w-6 h-5 rounded flex items-center justify-center text-slate-400 hover:text-teal-700 hover:bg-slate-200 text-[10px] font-bold transition-all">
-          ▼
-        </button>
-      `;
-
-      el.parentNode.insertBefore(wrapper, el);
-      wrapper.appendChild(btnCol);
-      el.classList.add('flex-1');
-      wrapper.appendChild(el);
-
-      attachDragEvents(wrapper);
+      assignMonthlyTaskToDay(assigningMonthlyTaskId, dayKey, val, displayDate);
     }
 
+    function confirmUnassignMonthlyTask() {
+      if (!assigningMonthlyTaskId) return;
+      if (localData.assignedMonthlyTasks) {
+        delete localData.assignedMonthlyTasks[assigningMonthlyTaskId];
+      }
+      closeModal('assign-date-modal');
+      renderAllTasks();
+      syncState();
+    }
+  </script>
+
+  <script>
     function getActiveViewContainers(currentElement) {
       const activeView = currentElement.closest('#monday-view-full, #monday-view-afternoon, #wednesday-view-full, #wednesday-view-afternoon, #friday-view-full, #friday-view-afternoon, #tab-mensual');
       if (!activeView) return [];
@@ -1156,7 +1691,6 @@
         if (prev && prev.classList.contains('task-card-container')) {
           parent.insertBefore(card, prev);
         } else if (currentContainerIdx > 0) {
-          // Si está en el tope de este horario, saltar al final del horario anterior
           const prevContainer = containers[currentContainerIdx - 1];
           prevContainer.appendChild(card);
           highlightCardMove(card);
@@ -1166,7 +1700,6 @@
         if (next && next.classList.contains('task-card-container')) {
           next.after(card);
         } else if (currentContainerIdx !== -1 && currentContainerIdx < containers.length - 1) {
-          // Si está al final de este horario, saltar al inicio del siguiente horario
           const nextContainer = containers[currentContainerIdx + 1];
           nextContainer.insertBefore(card, nextContainer.firstChild);
           highlightCardMove(card);
@@ -1178,9 +1711,9 @@
     }
 
     function highlightCardMove(card) {
-      card.classList.add('ring-2', 'ring-teal-500', 'bg-teal-50/40');
+      card.classList.add('ring-2', 'ring-teal-500', 'bg-teal-50/50');
       setTimeout(() => {
-        card.classList.remove('ring-2', 'ring-teal-500', 'bg-teal-50/40');
+        card.classList.remove('ring-2', 'ring-teal-500', 'bg-teal-50/50');
       }, 700);
     }
 
@@ -1202,7 +1735,6 @@
         container.classList.remove('drag-target-hover');
         if (!draggedItem) return;
 
-        // Si se suelta directamente en el contenedor (o está vacío)
         if (e.target === container || !container.querySelector('.task-card-container:hover')) {
           container.appendChild(draggedItem);
           checkEmptyContainers();
@@ -1283,11 +1815,11 @@
 
       containers.forEach(container => {
         const section = container.closest('section');
-        let title = 'Bloque de Horario';
+        let title = 'Bloque Horario';
 
         if (section) {
-          const h2h3 = section.querySelector('h3, h2');
-          if (h2h3) title = h2h3.textContent.trim();
+          const h = section.querySelector('h3, h2');
+          if (h) title = h.textContent.trim();
         }
 
         const isCurrent = container.contains(card);
@@ -1300,11 +1832,9 @@
             : 'bg-white border-slate-200 text-slate-800 hover:border-teal-500 hover:bg-teal-50/50'
         }`;
         btn.innerHTML = `
-          <div>
-            <div class="font-bold text-slate-800 flex items-center gap-1.5">
-              <span>⏰</span>
-              <span>${escapeHtml(title)}</span>
-            </div>
+          <div class="font-bold text-slate-800 flex items-center gap-1.5">
+            <span>⏰</span>
+            <span>${escapeHtml(title)}</span>
           </div>
           ${isCurrent ? '<span class="text-[11px] font-semibold text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">Actual</span>' : '<span class="text-teal-600 font-bold">Mover aquí →</span>'}
         `;
@@ -1312,19 +1842,14 @@
         if (!isCurrent) {
           btn.onclick = () => {
             transferTaskToContainer(movingTaskId, container.id);
-            closeMoveBlockModal();
+            closeModal('move-block-modal');
           };
         }
 
         optionsBox.appendChild(btn);
       });
 
-      document.getElementById('move-block-modal').classList.remove('hidden');
-    }
-
-    function closeMoveBlockModal() {
-      document.getElementById('move-block-modal').classList.add('hidden');
-      movingTaskId = null;
+      openModal('move-block-modal');
     }
 
     function transferTaskToContainer(taskId, targetContainerId) {
@@ -1334,6 +1859,10 @@
 
       targetContainer.appendChild(card);
       highlightCardMove(card);
+
+      const task = localData.allTasks.find(t => t.id === taskId);
+      if (task) task.container = targetContainerId;
+
       checkEmptyContainers();
       saveAllOrders();
     }
@@ -1346,7 +1875,11 @@
         const order = [];
         container.querySelectorAll(':scope > .task-card-container').forEach(card => {
           const id = card.getAttribute('data-task-id');
-          if (id) order.push(id);
+          if (id) {
+            order.push(id);
+            const task = localData.allTasks.find(t => t.id === id);
+            if (task) task.container = container.id;
+          }
         });
         localData.taskOrders[container.id] = order;
       });
@@ -1354,42 +1887,19 @@
       syncState();
     }
 
-    function applyAllSavedOrders() {
-      if (!localData.taskOrders) return;
-
-      Object.keys(localData.taskOrders).forEach(containerId => {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        const order = localData.taskOrders[containerId];
-        if (!Array.isArray(order)) return;
-
-        order.forEach(id => {
-          const card = document.querySelector(`.task-card-container[data-task-id="${id}"]`);
-          if (card) {
-            container.appendChild(card);
-          }
-        });
-      });
-
-      checkEmptyContainers();
-    }
-
     function promptResetOrderModal() {
-      document.getElementById('reset-order-modal').classList.remove('hidden');
-    }
-
-    function closeResetOrderModal() {
-      document.getElementById('reset-order-modal').classList.add('hidden');
+      openModal('reset-order-modal');
     }
 
     function confirmResetOrder() {
       localData.taskOrders = {};
-      closeResetOrderModal();
+      closeModal('reset-order-modal');
+      renderAllTasks();
       syncState();
-      location.reload();
     }
+  </script>
 
+  <script>
     function setDayMode(day, mode, triggerSync = true) {
       const dayPrefixMap = {
         'lunes': { key: 'mondayMode', btnFull: 'monday-btn-full', btnAfternoon: 'monday-btn-afternoon', viewFull: 'monday-view-full', viewAfternoon: 'monday-view-afternoon', badge: 'monday-badge' },
@@ -1423,26 +1933,6 @@
 
       updateAllProgress();
       if (triggerSync) syncState();
-    }
-
-    // Compatibilidad retroactiva
-    function setMondayMode(mode, triggerSync = true) {
-      setDayMode('lunes', mode, triggerSync);
-    }
-
-    function updateMonthLabels(monthIndex) {
-      const monthName = MONTH_NAMES[monthIndex] || 'Mes Actual';
-      const titleDisplay = document.getElementById('current-month-display');
-      const notesTitle = document.getElementById('notes-month-title');
-      if (titleDisplay) titleDisplay.textContent = monthName;
-      if (notesTitle) notesTitle.textContent = monthName;
-    }
-
-    function handleMonthChange() {
-      const monthSelect = document.getElementById('select-month');
-      localData.month = parseInt(monthSelect.value, 10);
-      updateMonthLabels(localData.month);
-      syncState();
     }
 
     function setScheduleShift(startHour, triggerSync = true) {
@@ -1493,8 +1983,8 @@
         if (container) container.classList.remove('completed');
       }
 
-      if (!localData.tasks) localData.tasks = {};
-      localData.tasks[checkbox.id] = checkbox.checked;
+      if (!localData.completedTasks) localData.completedTasks = {};
+      localData.completedTasks[checkbox.id] = checkbox.checked;
 
       updateAllProgress();
       syncState();
@@ -1557,120 +2047,24 @@
       }
     }
 
-    function openAddTaskModal() {
-      document.getElementById('add-task-modal').classList.remove('hidden');
-      document.getElementById('new-task-title').focus();
-    }
-
-    function closeAddTaskModal() {
-      document.getElementById('add-task-modal').classList.add('hidden');
-      document.getElementById('new-task-title').value = '';
-      document.getElementById('new-task-desc').value = '';
-    }
-
-    function handleAddTaskSubmit(e) {
-      e.preventDefault();
-      const week = document.getElementById('new-task-week').value;
-      const title = document.getElementById('new-task-title').value.trim();
-      const desc = document.getElementById('new-task-desc').value.trim();
-
-      if (!title) return;
-
-      const taskId = 'm-custom-' + Date.now();
-      const newTask = { id: taskId, week: week, title: title, desc: desc };
-
-      if (!localData.customMonthlyTasks) localData.customMonthlyTasks = [];
-      localData.customMonthlyTasks.push(newTask);
-
-      renderCustomMonthlyTasks();
-      closeAddTaskModal();
-      updateAllProgress();
-      syncState();
-    }
-
-    function deleteCustomTask(taskId) {
-      if (!localData.customMonthlyTasks) return;
-      localData.customMonthlyTasks = localData.customMonthlyTasks.filter(t => t.id !== taskId);
-      if (localData.tasks) delete localData.tasks[taskId];
-      
-      const el = document.getElementById('wrapper-' + taskId);
-      if (el) {
-        const wrapper = el.closest('.task-card-container');
-        if (wrapper) wrapper.remove();
-        else el.remove();
-      }
-
-      updateAllProgress();
-      syncState();
-    }
-
-    function renderCustomMonthlyTasks() {
-      document.querySelectorAll('.custom-monthly-item').forEach(el => {
-        const wrapper = el.closest('.task-card-container');
-        if (wrapper) wrapper.remove();
-        else el.remove();
-      });
-
-      if (!localData.customMonthlyTasks) return;
-
-      localData.customMonthlyTasks.forEach(task => {
-        const container = document.getElementById('container-week-' + task.week);
-        if (!container) return;
-
-        const isChecked = !!(localData.tasks && localData.tasks[task.id]);
-        const wrapper = document.createElement('div');
-        wrapper.id = 'wrapper-' + task.id;
-        wrapper.className = 'custom-monthly-item flex items-center gap-2 flex-1';
-
-        wrapper.innerHTML = `
-          <label class="task-item flex items-start p-3.5 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-teal-400 flex-1 ${isChecked ? 'completed' : ''}">
-            <input type="checkbox" id="${task.id}" onchange="toggleTask(this)" ${isChecked ? 'checked' : ''} class="mt-1 h-5 w-5 rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-            <div class="ml-3.5 flex-1">
-              <span class="task-title font-semibold text-slate-800 block">${escapeHtml(task.title)}</span>
-              ${task.desc ? `<span class="text-xs sm:text-sm text-slate-500 mt-0.5 block">${escapeHtml(task.desc)}</span>` : ''}
-            </div>
-          </label>
-          <button type="button" onclick="deleteCustomTask('${task.id}')" title="Eliminar tarea" class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors text-sm">
-            🗑️
-          </button>
-        `;
-
-        container.appendChild(wrapper);
-        wrapTaskWithReorderControls(wrapper, container);
-      });
-    }
-
-    function escapeHtml(str) {
-      return str
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
     function promptResetModal(target) {
       resetTarget = target;
-      const modal = document.getElementById('reset-modal');
       const title = document.getElementById('reset-modal-title');
       const desc = document.getElementById('reset-modal-desc');
 
       if (target === 'weekly') {
-        title.textContent = '¿Reiniciar tareas semanales?';
-        desc.textContent = 'Se desmarcarán únicamente las tareas de Lunes, Miércoles y Viernes. Las tareas del plan mensual se conservarán.';
+        title.textContent = '¿Desmarcar tareas semanales?';
+        desc.textContent = 'Se desmarcarán únicamente las tareas de Lunes, Miércoles y Viernes. Las tareas del plan mensual se conservarán intactas.';
       } else {
-        title.textContent = '¿Reiniciar tareas del mes?';
-        desc.textContent = 'Se desmarcarán las tareas del plan mensual de las 4 semanas para comenzar el nuevo mes.';
+        title.textContent = '¿Desmarcar tareas del mes?';
+        desc.textContent = 'Se desmarcarán las tareas del plan rotativo mensual para iniciar un nuevo mes.';
       }
 
-      modal.classList.remove('hidden');
-    }
-
-    function closeResetModal() {
-      document.getElementById('reset-modal').classList.add('hidden');
+      openModal('reset-modal');
     }
 
     function confirmResetAction() {
-      if (!localData.tasks) localData.tasks = {};
+      if (!localData.completedTasks) localData.completedTasks = {};
 
       if (resetTarget === 'weekly') {
         ['tab-lunes', 'tab-miercoles', 'tab-viernes'].forEach(tabId => {
@@ -1678,7 +2072,7 @@
           if (tab) {
             tab.querySelectorAll('input[type="checkbox"]').forEach(cb => {
               cb.checked = false;
-              delete localData.tasks[cb.id];
+              delete localData.completedTasks[cb.id];
               const container = cb.closest('.task-item');
               if (container) container.classList.remove('completed');
             });
@@ -1689,26 +2083,42 @@
         if (monthlyTab) {
           monthlyTab.querySelectorAll('input[type="checkbox"]').forEach(cb => {
             cb.checked = false;
-            delete localData.tasks[cb.id];
+            delete localData.completedTasks[cb.id];
             const container = cb.closest('.task-item');
             if (container) container.classList.remove('completed');
           });
         }
       }
 
-      closeResetModal();
+      closeModal('reset-modal');
       updateAllProgress();
       syncState();
     }
+  </script>
 
+  <script>
     document.addEventListener('DOMContentLoaded', () => {
-      setupReorderControls();
-
       try {
-        const saved = localStorage.getItem('veronica_routine_data');
-        if (saved) applyDataToUI(JSON.parse(saved));
+        const saved = localStorage.getItem('veronica_routine_v2_data');
+        if (saved) {
+          applyDataToUI(JSON.parse(saved));
+        } else {
+          const legacy = localStorage.getItem('veronica_routine_data');
+          if (legacy) {
+            const parsed = JSON.parse(legacy);
+            if (parsed.tasks) localData.completedTasks = parsed.tasks;
+            if (parsed.notes) localData.notes = parsed.notes;
+            if (parsed.shift) localData.shift = parsed.shift;
+            applyDataToUI(localData);
+          } else {
+            updateCalendarDates();
+            renderAllTasks();
+          }
+        }
       } catch (e) {
         console.warn("Fallo cargando cache local", e);
+        updateCalendarDates();
+        renderAllTasks();
       }
 
       initFirebase();
